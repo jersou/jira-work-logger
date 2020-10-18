@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Deno: filesContentGenerator.ts" type="DenoConfigurationType" inputPath="$PROJECT_DIR$/filesContentGenerator.ts" programParameters="run --unstable --allow-read --allow-write">
+    <method v="2" />
+  </configuration>
+</component>

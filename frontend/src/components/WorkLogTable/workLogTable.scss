@@ -1,0 +1,97 @@
+td, th {
+  border-left: solid 1px #dddddd;
+}
+
+.row-header {
+  max-width: 250px;
+}
+
+tr.odd {
+  background-color: #f7f7f7;
+
+  .total {
+    background-color: #dedede;
+  }
+}
+
+tr.even {
+  background-color: #e6e6e6;
+
+  .total {
+    background-color: #cfcfcf;
+  }
+}
+
+.total-row {
+  background-color: #c2c6dc;
+}
+
+tr {
+  transition: background-color 0.6s;
+
+  td, th {
+    transition: max-height 0.6s, line-height 0.6s, padding 0.6s, border 0.6s, background-color 0.6s;
+
+    div {
+      transition: max-height 0.6s, line-height 0.6s, padding 0.6s, border 0.6s, background-color 0.6s;
+    }
+  }
+}
+
+.issue-el-exit-active {
+  td, th {
+    border: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    line-height: 0;
+    background-color: #ffdcdc !important;
+    overflow: hidden;
+
+    div {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+      background-color: #ffdcdc !important;
+    }
+  }
+}
+
+.issue-el-enter {
+  td, th {
+    line-height: 0;
+    overflow: hidden;
+
+    div {
+      max-height: 0;
+      overflow: hidden;
+    }
+  }
+}
+
+.issue-el-enter.issue-el-enter-active {
+  td, th {
+    line-height: 1.43;
+
+    div {
+      max-height: 200px !important;
+    }
+  }
+}
+
+
+.add-button {
+  position: relative;
+
+  button {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    flex: 1;
+    background-color: #c2c6dc;
+  }
+}

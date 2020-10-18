@@ -1,0 +1,32 @@
+.hour {
+  max-width: 60px;
+  text-align: center;
+
+  input {
+    text-align: center;
+  }
+
+  .MuiInput-underline:before {
+    border-bottom: 0
+  }
+}
+
+.hour-cell {
+  display: flex;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+
+  button {
+    flex: 1;
+    color: #a1a1a1;
+  }
+
+  div {
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+  }
+}

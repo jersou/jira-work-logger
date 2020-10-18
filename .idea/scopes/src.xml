@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="src" pattern="file:*.tsx||file:*.ts||file:*.css||file:*.scss||file:*.html" />
+</component>

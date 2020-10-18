@@ -1,0 +1,9 @@
+form .MuiFormControl-root {
+    margin: 20px;
+}
+
+form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}

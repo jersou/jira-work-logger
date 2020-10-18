@@ -1,0 +1,8 @@
+.workLogDate {
+    max-width: 200px;
+    text-align: center;
+}
+
+.workLogDate input {
+    text-align: center;
+}

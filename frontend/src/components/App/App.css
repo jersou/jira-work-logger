@@ -1,0 +1,16 @@
+.main {
+  margin: 10px;
+}
+
+.btn-part {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-part button {
+  margin: 10px;
+}
+
+.MuiTableCell-root {
+  padding: 4px 4px !important;
+}
