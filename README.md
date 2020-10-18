@@ -45,10 +45,11 @@ or add the `--reload` parameter to the run command
 # Make the bundle file
 ```
 git clone https://github.com/jersou/jira-work-logger.git
-cd frontend
+cd jira-work-logger/frontend
 yarn install
 yarn build
 cd ..
 deno run --unstable --allow-read --allow-write ./filesContentGenerator.ts
 deno bundle --unstable ./server.ts dist/server.js
+deno run --unstable --allow-net --allow-run dist/server.js
 ```
