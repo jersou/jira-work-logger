@@ -27,6 +27,7 @@ or add the `--reload` parameter to the run command
 
 * [React](https://www.reactjs.org/)
   * [Create React App](https://reactjs.org/docs/create-a-new-react-app.html)
+  * [Material UI](https://material-ui.com/)
   * [React Transition Group](https://github.com/reactjs/react-transition-group)
 * [Redux](https://redux.js.org/)
   * [Reduxjs Toolkit](https://redux-toolkit.js.org/)
