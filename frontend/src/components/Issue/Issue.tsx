@@ -3,7 +3,7 @@ import TextField from '@material-ui/core/TextField';
 import './issue.css'
 import {Delete} from "@material-ui/icons";
 import {IconButton} from "@material-ui/core";
-import {ConfigData, IssueType} from "../../types";
+import {IssueType} from "../../types";
 
 export interface IssueProps {
   issue: IssueType,

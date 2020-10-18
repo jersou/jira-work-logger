@@ -28,10 +28,12 @@ export type ConfigData = {
   hamsterDaysToImport: number;
 };
 export type WorksLogged = { [key: string]: number };
+export type WebsocketState = 'OPEN' | 'CLOSE' | 'ERROR' | 'UNDEFINED'
 export type AppState = {
   data: WorkLogTableData;
   config: ConfigData;
   worksLogged: WorksLogged;
+  websocketState: WebsocketState
 };
 export type HamsterReportElement = {
   comment: string;

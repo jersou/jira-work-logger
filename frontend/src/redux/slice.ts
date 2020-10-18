@@ -10,7 +10,7 @@ import {
   IssueType,
   ToLogElement,
   WorkLogTableData,
-  WorksLogged,
+  WorksLogged, WebsocketState,
 } from "../types";
 
 function addColumn(data: WorkLogTableData, date?: Date): WorkLogTableData {
@@ -47,7 +47,8 @@ const getInitialState: () => AppState = () => {
   } else {
     obj = {
       data: addRow(initWithLast5days({dates: [], hours: [], issues: []})),
-      config: {jiraUrl: "jiraUrl", username: "username", password: "password", hamsterDaysToImport: 5,}
+      config: {jiraUrl: "jiraUrl", username: "username", password: "password", hamsterDaysToImport: 5},
+      websocketState: 'UNDEFINED'
     };
   }
   return obj;
@@ -124,6 +125,11 @@ const slice = createSlice({
       localStorage.clear();
       return getInitialState();
     },
+    websocketStatusChange(state: Draft<AppState>, {payload: {websocketState}}: PayloadAction<{ websocketState: WebsocketState }>) {
+      if (websocketState === 'OPEN' || state.websocketState !== 'ERROR') {
+        state.websocketState = websocketState
+      }
+    }
   },
 });
 

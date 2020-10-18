@@ -3,7 +3,7 @@ import {Button} from "@material-ui/core";
 import {Add, Delete, GetApp, Send} from "@material-ui/icons";
 import {StopServer} from "../StopServer/StopServer";
 import React from "react";
-import {ConfigData, WorksLogged} from "../../types";
+import {ConfigData, WebsocketState, WorksLogged} from "../../types";
 
 export type ButtonBarProps = {
   config: ConfigData;
@@ -13,9 +13,10 @@ export type ButtonBarProps = {
   createWorkLogs: () => void;
   setWorksLogged: ({worksLogged}: { worksLogged: WorksLogged }) => void;
   resetHours: () => void;
+  websocketState: WebsocketState
 }
 
-export function ButtonBar({clearData, addLast5Days, hamsterImport, createWorkLogs, setWorksLogged, resetHours, config}: ButtonBarProps) {
+export function ButtonBar({clearData, addLast5Days, hamsterImport, createWorkLogs, setWorksLogged, resetHours, config, websocketState}: ButtonBarProps) {
   async function createWorkLogAndUpdate() {
     createWorkLogs()
     setWorksLogged({worksLogged: genWl(await getLastIssues(config), config.username)})
@@ -32,8 +33,9 @@ export function ButtonBar({clearData, addLast5Days, hamsterImport, createWorkLog
     <Button variant="contained" size="small" onClick={hamsterImport}>
       <GetApp/> Import from Hamster
     </Button>
-    <StopServer/>
-    <Button variant="contained" color="secondary" onClick={createWorkLogAndUpdate}>
-      <Send/> Log this work logs</Button>
+    <StopServer websocketState={websocketState}/>
+    <Button variant="contained" color="primary" onClick={createWorkLogAndUpdate}>
+      <Send/> Log this work logs
+    </Button>
   </div>
 }

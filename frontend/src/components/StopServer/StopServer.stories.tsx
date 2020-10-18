@@ -10,4 +10,4 @@ export default {
   },
 } as Meta;
 
-export const stopServer = () => <StopServer/>
+export const stopServer = () => <StopServer websocketState={"UNDEFINED"}/>
