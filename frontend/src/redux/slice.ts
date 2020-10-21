@@ -86,7 +86,11 @@ const slice = createSlice({
       state.data = data;
     },
     setIssueValue(state: Draft<AppState>, {payload: {y, issue}}: PayloadAction<{ y: number; issue: IssueType }>) {
-      state.data.issues[y] = {...issue, reactKey: state.data.issues[y].reactKey || Math.random()};
+      state.data.issues[y] = {
+        ...issue,
+        workLogComment: issue.workLogComment || state.data.issues[y].workLogComment,
+        reactKey: state.data.issues[y].reactKey || Math.random()
+      };
     },
     removeColumn(state: Draft<AppState>, {payload: {num}}: PayloadAction<{ num: number }>) {
       state.data.dates.splice(num, 1);
