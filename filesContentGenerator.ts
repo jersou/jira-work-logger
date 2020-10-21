@@ -55,7 +55,7 @@ export async function genFilesContent() {
   const files = await encodeFolder(cwd + "/frontend/build");
   await Deno.writeTextFile(
     "filesContent.ts",
-    `import { EncodedFiles } from "${cwd}/filesContentGenerator.ts";\n` +
+    `import { EncodedFiles } from "./filesContentGenerator.ts";\n` +
       "export const files: EncodedFiles = " +
       JSON.stringify(files, replacer, " ") +
       "\n"
