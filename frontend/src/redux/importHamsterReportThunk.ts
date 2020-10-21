@@ -42,7 +42,7 @@ export function importHamsterReportToState(hamsterReport: HamsterReportElement[]
     if (commentIndex >= 0) {
       const dateIndex = state.data.dates.map(date => date.toISOString().substr(0, 10)).indexOf(date)
       if (dateIndex >= 0) {
-        state.data.hours[dateIndex][commentIndex] = round2(hours)
+        state.data.hours[dateIndex][commentIndex] = round2(state.data.hours[dateIndex][commentIndex] + hours)
       }
     }
   })
