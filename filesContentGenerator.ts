@@ -1,25 +1,38 @@
 #!/usr/bin/env -S deno run --unstable --allow-read --allow-write
 
+import { assertEquals } from "https://deno.land/std@0.74.0/testing/asserts.ts";
 import { walk } from "https://deno.land/std@0.74.0/fs/walk.ts";
-import { b64_to_utf8, utf8_to_b64 } from "./base64.ts";
+import { decodeQuotedPrintable, encodeQuotedPrintable } from "./quotedPrintable.ts";
+import { decodeFileContentB64, encodeFileContentB64 } from "./base64.ts";
 
-export function encodeFileContent(content: Uint8Array): string[] {
-  return utf8_to_b64(new TextDecoder().decode(content)).match(/.{1,1000}/g) || [];
+export type EncodedFile = { content: string[]; encoding: "base64" | "quoted" };
+export type EncodedFiles = { [key: string]: EncodedFile };
+
+export function encodeFileContent(content: Uint8Array): EncodedFile {
+  const b64 = encodeFileContentB64(content);
+  const quotedPrintable = encodeQuotedPrintable(content).split("\n");
+  return b64.join("").length < quotedPrintable.join("").length
+    ? { encoding: "base64", content: b64 }
+    : { encoding: "quoted", content: quotedPrintable };
 }
 
-export function decodeFileContent(encodedContent: string[]): string {
-  return b64_to_utf8(encodedContent.join(""));
+export async function decodeFileContent(fileEncoded: EncodedFile): Promise<Uint8Array> {
+  return fileEncoded.encoding === "base64"
+    ? decodeFileContentB64(fileEncoded.content.join("\n"))
+    : await decodeQuotedPrintable(fileEncoded.content.join("\n"));
 }
 
-async function encodeFolder(path: string): Promise<{ [key: string]: string[] }> {
-  const files: { [key: string]: string[] } = {};
+async function encodeFolder(path: string): Promise<EncodedFiles> {
+  const files: EncodedFiles = {};
   for await (const entry of walk(path)) {
     if (entry.isFile) {
       const file = await Deno.open(entry.path, { read: true });
       const content = await Deno.readAll(file);
       Deno.close(file.rid);
-      // store the file in base64 encoding cut in 1000-character chunks
-      files[entry.path.replace(/^frontend\/build\//, "")] = encodeFileContent(content);
+      const path = entry.path.replace(/^frontend\/build\//, "");
+      console.log(path);
+      files[path] = encodeFileContent(content);
+      assertEquals(await decodeFileContent(files[path]), content);
     }
   }
   return files;
@@ -27,5 +40,11 @@ async function encodeFolder(path: string): Promise<{ [key: string]: string[] }> 
 
 if (import.meta.main) {
   const files = await encodeFolder("./frontend/build");
-  await Deno.writeTextFile("filesContent.ts", "export const files = " + JSON.stringify(files, null, " ") + "\n");
+  await Deno.writeTextFile(
+    "filesContent.ts",
+    'import { EncodedFiles } from "./filesContentGenerator.ts";\n' +
+      "export const files: EncodedFiles = " +
+      JSON.stringify(files, null, " ") +
+      "\n"
+  );
 }

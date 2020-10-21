@@ -16,7 +16,7 @@ config.args = {
     jiraUrl: "jiraUrl",
     username: "username",
     password: "password",
-    hamsterIgnoredCategories: "none",
+    hamsterIgnoreComment: "none",
     hamsterDaysToImport: 5
   }
 };

@@ -24,7 +24,7 @@ export type ConfigData = {
   jiraUrl: string;
   username: string;
   password: string;
-  hamsterIgnoredCategories: string;
+  hamsterIgnoreComment: string;
   hamsterDaysToImport: number;
 };
 export type WorksLogged = { [key: string]: number };

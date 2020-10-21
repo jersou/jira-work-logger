@@ -29,7 +29,7 @@ workLogTable.args = {
     jiraUrl: 'jiraUrl',
     username: 'username',
     password: 'password',
-    hamsterIgnoredCategories: 'to ignore',
+    hamsterIgnoreComment: 'to ignore',
     hamsterDaysToImport: 5
   }
 }

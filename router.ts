@@ -44,19 +44,22 @@ export function addStopRoute(router: Router, controller: AbortController) {
   });
 }
 
-export function addStaticFilesRoutes(router: Router) {
+export async function addStaticFilesRoutes(router: Router) {
   if (files["index.html"]) {
+    const indexContent = await decodeFileContent(files["index.html"]);
     router.get("/", (ctx) => {
-      ctx.response.body = decodeFileContent(files["index.html"]);
+      ctx.response.body = indexContent;
       ctx.response.type = lookup("index.html");
     });
   }
-  Object.entries(files).map(([path, content]) =>
-    router.get(`/${path}`, (ctx) => {
-      ctx.response.body = decodeFileContent(content);
-      ctx.response.type = lookup(path);
-    })
-  );
+  Object.entries(files)
+    .map(([path, content]) => [path, lookup(path), decodeFileContent(content)])
+    .map(([path, type, bodyPromise]) =>
+      router.get(`/${path}`, async (ctx) => {
+        ctx.response.body = await bodyPromise;
+        ctx.response.type = String(type);
+      })
+    );
 }
 
 export function addJiraRoutes(router: Router) {
@@ -65,10 +68,10 @@ export function addJiraRoutes(router: Router) {
     const jql = `
       (
         assignee = currentUser()
-        AND ( resolution = Unresolved OR updatedDate >= startOfWeek() )
+        AND ( resolution = Unresolved OR updatedDate >= "-14d" )
         AND updatedDate >= startOfYear()
       ) OR (
-        worklogAuthor = currentUser() AND worklogDate > startOfWeek()
+        worklogAuthor = currentUser() AND worklogDate > "-14d"
       )
       order by updatedDate DESC`;
     ctx.response.body = await jiraJql(config, jql);
@@ -76,11 +79,22 @@ export function addJiraRoutes(router: Router) {
     allowLocalhost(ctx);
   });
 
+  let issuesCache: { [key: string]: string } = {};
   router.post("/issue/:issueKey", async (ctx) => {
-    const config: ConfigData = JSON.parse(await ctx.request.body().value);
-    ctx.response.body = await jiraApi(config, `issue/${ctx.params.issueKey}?fields=summary`);
-    ctx.response.type = "application/json";
-    allowLocalhost(ctx);
+    if (ctx.params.issueKey) {
+      let issue;
+      if (issuesCache[ctx.params.issueKey]) {
+        console.log(`%c[jiraIssuesCache] ${ctx.params.issueKey}`, "color:green");
+        issue = issuesCache[ctx.params.issueKey];
+      } else {
+        const config: ConfigData = JSON.parse(await ctx.request.body().value);
+        issue = await jiraApi(config, `issue/${ctx.params.issueKey}?fields=summary`);
+        issuesCache[ctx.params.issueKey] = issue;
+      }
+      ctx.response.body = issue;
+      ctx.response.type = "application/json";
+      allowLocalhost(ctx);
+    }
   });
 
   router.post("/createWorkLogs", async (ctx) => {
@@ -105,7 +119,7 @@ export function addJiraRoutes(router: Router) {
 
 export function addHamsterRoute(router: Router) {
   router.get("/hamsterExport", async (ctx) => {
-    const ignoreCategories = ctx.request.url.searchParams.get("ignore");
+    const ignore = ctx.request.url.searchParams.get("ignore");
     const hamsterDaysToImport = Number(ctx.request.url.searchParams.get("hamsterDaysToImport") || 5);
     const begin = new Date(Date.now() - 1000 * 60 * 60 * 24 * hamsterDaysToImport).toISOString().substr(0, 10);
     const end = new Date().toISOString().substr(0, 10);
@@ -113,7 +127,7 @@ export function addHamsterRoute(router: Router) {
       `%c[hamsterExport] hamsterDaysToImport=${hamsterDaysToImport} begin=${begin} end=${end}`,
       "color:indigo"
     );
-    ctx.response.body = await getHamsterReport(begin, end, ignoreCategories);
+    ctx.response.body = await getHamsterReport(begin, end, ignore);
     ctx.response.type = "application/json";
     allowLocalhost(ctx);
   });

@@ -22,7 +22,7 @@ myLastIssues.args = {
     hours: [[1, 2], [3, 4], [5, 6]],
   },
   config: {
-    jiraUrl: 'jiraUrl', username: 'username', password: 'password', hamsterIgnoredCategories: '', hamsterDaysToImport: 2
+    jiraUrl: 'jiraUrl', username: 'username', password: 'password', hamsterIgnoreComment: '', hamsterDaysToImport: 2
   },
   issueClicked: () => console.log('issueClicked'),
   setWorksLogged: () => console.log('setWorksLogged')

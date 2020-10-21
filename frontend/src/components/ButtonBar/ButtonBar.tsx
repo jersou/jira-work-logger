@@ -1,6 +1,6 @@
 import {genWl, getLastIssues} from "../../Jira";
-import {Button} from "@material-ui/core";
-import {Add, Delete, GetApp, Send} from "@material-ui/icons";
+import {Button, IconButton} from "@material-ui/core";
+import {Add, Delete, GetApp, Link, Send} from "@material-ui/icons";
 import {StopServer} from "../StopServer/StopServer";
 import React from "react";
 import {ConfigData, WebsocketState, WorksLogged} from "../../types";
@@ -33,9 +33,13 @@ export function ButtonBar({clearData, addLast5Days, hamsterImport, createWorkLog
     <Button variant="contained" size="small" onClick={hamsterImport}>
       <GetApp/> Import from Hamster
     </Button>
-    <StopServer websocketState={websocketState}/>
     <Button variant="contained" color="primary" onClick={createWorkLogAndUpdate}>
       <Send/> Log this work logs
     </Button>
+    <StopServer websocketState={websocketState}/>
+    <IconButton target="_blank"
+                href={`${config.jiraUrl}/secure/TimesheetReport.jspa?reportKey=jira-timesheet-plugin:report&page=1&weekends=true&showDetails=true&reportingDay=1&numOfWeeks=1&offset=0&sum=day&targetUser=${config.username}}`}>
+      <Link/>
+    </IconButton>
   </div>
 }

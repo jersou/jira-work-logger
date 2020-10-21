@@ -4,7 +4,9 @@ import "./workLogDate.css";
 import {default as dayjs} from 'dayjs';
 import 'dayjs/locale/fr';
 
-dayjs.locale('fr')
+if (navigator.language === 'fr-FR') {
+  dayjs.locale('fr')
+}
 
 export interface DateProps {
   date: Date,

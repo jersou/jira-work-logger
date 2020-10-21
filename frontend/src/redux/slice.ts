@@ -47,7 +47,13 @@ const getInitialState: () => AppState = () => {
   } else {
     obj = {
       data: addRow(initWithLast5days({dates: [], hours: [], issues: []})),
-      config: {jiraUrl: "jiraUrl", username: "username", password: "password", hamsterDaysToImport: 5},
+      config: {
+        jiraUrl: "jiraUrl",
+        username: "username",
+        password: "password",
+        hamsterDaysToImport: 5,
+        hamsterIgnoreComment: ''
+      },
       websocketState: 'UNDEFINED'
     };
   }

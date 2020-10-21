@@ -34,10 +34,10 @@ export function Config({config, setConfig, resetConfig}: ConfigProps) {
                    autoComplete="off"
                    onChange={e => setConfig({config: {...config, password: e.target.value}})}
         />
-        <TextField label="Hamster categories to ignore (regex)"
+        <TextField label="Hamster comments to ignore (regex)"
                    style={{minWidth: 300}}
-                   value={config.hamsterIgnoredCategories}
-                   onChange={e => setConfig({config: {...config, hamsterIgnoredCategories: e.target.value}})}
+                   value={config.hamsterIgnoreComment}
+                   onChange={e => setConfig({config: {...config, hamsterIgnoreComment: e.target.value}})}
         />
         <TextField label="Nb of days to import from Hamster"
                    style={{minWidth: 300}}
