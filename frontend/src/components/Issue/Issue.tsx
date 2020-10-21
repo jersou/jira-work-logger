@@ -24,7 +24,7 @@ export const Issue: React.FC<IssueProps> = ({issue, onDelete, onKeyChange, onCom
                  onChange={e => onKeyChange(e.target.value)}/>
       <TextField className="comment" value={issue.workLogComment}
                  placeholder='Work log comment'
-                 style={{maxWidth: 160}}
+                 style={{minWidth: 350}}
                  onChange={e => onCommentChange(e.target.value)}/>
     </div>
     {issue.fields?.summary ?
