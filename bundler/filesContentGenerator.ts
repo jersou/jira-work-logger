@@ -1,10 +1,10 @@
 #!/usr/bin/env -S deno run --unstable --allow-read --allow-write
 
-import { assertEquals } from "https://deno.land/std@0.74.0/testing/asserts.ts";
-import { walk } from "https://deno.land/std@0.74.0/fs/walk.ts";
+import { assertEquals } from "https://deno.land/std@0.75.0/testing/asserts.ts";
+import { walk } from "https://deno.land/std@0.75.0/fs/walk.ts";
 import { decodeQuotedPrintable, encodeQuotedPrintable } from "./quotedPrintable.ts";
 import { decodeFileContentB64, encodeFileContentB64 } from "./base64.ts";
-import { dirname, fromFileUrl } from "https://deno.land/std@0.74.0/path/posix.ts";
+import { dirname, fromFileUrl } from "https://deno.land/std@0.75.0/path/posix.ts";
 
 export type EncodedFile = { content: string[]; encoding: "base64" | "quoted" };
 export type EncodedFiles = { [key: string]: EncodedFile };
@@ -51,8 +51,8 @@ function replacer(key: string, value: any) {
 }
 
 export async function genFilesContent() {
-  const cwd = dirname(fromFileUrl(import.meta.url));
-  const files = await encodeFolder(cwd + "/frontend/build");
+  const cwd = dirname(dirname(fromFileUrl(import.meta.url))) + "/frontend/build";
+  const files = await encodeFolder(cwd);
   await Deno.writeTextFile(
     "filesContent.ts",
     `import { EncodedFiles } from "./filesContentGenerator.ts";\n` +

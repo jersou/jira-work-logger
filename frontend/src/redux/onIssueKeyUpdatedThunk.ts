@@ -1,13 +1,22 @@
 import {IssueType} from "../types";
 import {actions, AppThunk, Dispatch, GetState} from "./slice";
 
+
+const issuesCache: { [key: string]: IssueType } = {};
+
 export async function getIssueSummaryFromJira(newData: { key?: string; comment?: string }, getState: GetState, dispatch: Dispatch, y: number) {
-  const issueFromJira = await fetch(`http://localhost:8000/issue/${newData.key?.trim()}`, {
-    method: 'POST',
-    body: JSON.stringify(getState().config)
-  })
-    .then(async resp => (await resp.json()) || {key: ''})
-    .catch(() => ({key: ''}))
+  const key = newData.key?.trim() || ''
+  const issueFromJira =
+    issuesCache[key] ?
+      issuesCache[key]
+      :
+      await fetch(`http://localhost:8000/issue/${key}`, {
+        method: 'POST',
+        body: JSON.stringify(getState().config)
+      })
+        .then(async resp => (await resp.json()) || {key: ''})
+        .catch(() => ({key: ''}))
+  issuesCache[key] = issueFromJira
   if (issueFromJira?.key === newData.key) {
     dispatch(actions.setIssueValue({
       y,

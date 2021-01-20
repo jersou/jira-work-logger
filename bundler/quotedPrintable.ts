@@ -1,5 +1,5 @@
-import { BufReader, BufWriter } from "https://deno.land/std@0.74.0/io/bufio.ts";
-import { decode as hexDecode } from "https://deno.land/std@0.74.0/encoding/hex.ts";
+import { BufReader, BufWriter } from "https://deno.land/std@0.75.0/io/bufio.ts";
+import { decode as hexDecode } from "https://deno.land/std@0.75.0/encoding/hex.ts";
 
 const hexTable = new TextEncoder().encode("0123456789ABCDEF");
 

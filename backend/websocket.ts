@@ -1,5 +1,5 @@
-import { WebSocket, WebSocketServer } from "https://deno.land/x/websocket@v0.0.5/mod.ts";
-import { deferred } from "https://deno.land/std/async/mod.ts";
+import { WebSocket, WebSocketServer } from "https://deno.land/x/websocket@v0.0.6/mod.ts";
+import { deferred } from "https://deno.land/std@0.83.0/async/mod.ts";
 
 // on client: new WebSocket("ws://127.0.0.1:8001")
 export function runWebsocketServerAndWaitClose() {

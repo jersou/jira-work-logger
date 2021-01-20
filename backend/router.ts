@@ -1,9 +1,9 @@
-import { Router, RouterContext } from "https://deno.land/x/oak@v6.3.1/mod.ts";
-import { lookup } from "https://deno.land/x/media_types@v2.5.1/mod.ts";
-import { files } from "./filesContent.ts";
+import { Router, RouterContext } from "https://deno.land/x/oak@v6.4.1/mod.ts";
+import { lookup } from "https://deno.land/x/media_types@v2.7.0/mod.ts";
+import { files } from "../bundler/filesContent.ts";
 import { getHamsterReport } from "./hamster.ts";
-import { ConfigData, ToLogElement } from "./frontend/src/types.ts";
-import { decodeFileContent } from "./filesContentGenerator.ts";
+import { ConfigData, ToLogElement } from "../frontend/src/types.ts";
+import { decodeFileContent } from "../bundler/filesContentGenerator.ts";
 
 export type jiraApiOptions = {
   method?: string;
@@ -79,7 +79,7 @@ export function addJiraRoutes(router: Router) {
     allowLocalhost(ctx);
   });
 
-  let issuesCache: { [key: string]: string } = {};
+  const issuesCache: { [key: string]: string } = {};
   router.post("/issue/:issueKey", async (ctx) => {
     if (ctx.params.issueKey) {
       let issue;
@@ -99,18 +99,21 @@ export function addJiraRoutes(router: Router) {
 
   router.post("/createWorkLogs", async (ctx) => {
     const { config, toLog }: { config: ConfigData; toLog: ToLogElement[] } = JSON.parse(await ctx.request.body().value);
-    await Promise.all(
-      toLog.map((log) =>
-        jiraApi(config, `issue/${log.key}/worklog`, {
-          method: "POST",
-          body: JSON.stringify({
-            comment: log.comment,
-            started: `${log.date}T20:00:00.000+0000`,
-            timeSpent: `${log.hours}h`,
-          }),
-        })
-      )
-    );
+
+    // sequence POSTs → otherwise it causes Jira bugs on remaining and total logged (not updated)
+    for (const log of toLog) {
+      await jiraApi(config, `issue/${log.key}/worklog`, {
+        method: "POST",
+        body: JSON.stringify({
+          comment: log.comment,
+          started: `${log.date}T20:00:00.000+0000`,
+          timeSpent: `${log.hours}h`,
+        }),
+      });
+      // sleep 200 ms
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
     ctx.response.body = '{"status":"OK"}';
     ctx.response.type = "application/json";
     allowLocalhost(ctx);

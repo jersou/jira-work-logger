@@ -16,13 +16,14 @@ export type ButtonBarProps = {
   websocketState: WebsocketState
 }
 
-export function ButtonBar({clearData, addLast5Days, hamsterImport, createWorkLogs, setWorksLogged, resetHours, config, websocketState}: ButtonBarProps) {
-  async function createWorkLogAndUpdate() {
-    createWorkLogs()
-    setWorksLogged({worksLogged: genWl(await getLastIssues(config), config.username)})
-    resetHours();
-  }
-
+export function ButtonBar({
+                            clearData,
+                            addLast5Days,
+                            hamsterImport,
+                            createWorkLogs,
+                            config,
+                            websocketState
+                          }: ButtonBarProps) {
   return <div className="btn-part">
     <Button variant="contained" size="small" onClick={clearData}>
       <Delete/> Clear the data
@@ -33,7 +34,7 @@ export function ButtonBar({clearData, addLast5Days, hamsterImport, createWorkLog
     <Button variant="contained" size="small" onClick={hamsterImport}>
       <GetApp/> Import from Hamster
     </Button>
-    <Button variant="contained" color="primary" onClick={createWorkLogAndUpdate}>
+    <Button variant="contained" color="primary" onClick={createWorkLogs}>
       <Send/> Log this work logs
     </Button>
     <StopServer websocketState={websocketState}/>

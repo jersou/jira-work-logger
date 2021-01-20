@@ -88,7 +88,7 @@ const slice = createSlice({
     setIssueValue(state: Draft<AppState>, {payload: {y, issue}}: PayloadAction<{ y: number; issue: IssueType }>) {
       state.data.issues[y] = {
         ...issue,
-        workLogComment: issue.workLogComment || state.data.issues[y].workLogComment,
+        workLogComment: issue.workLogComment !== undefined ? issue.workLogComment : state.data.issues[y].workLogComment,
         reactKey: state.data.issues[y].reactKey || Math.random()
       };
     },
@@ -103,7 +103,13 @@ const slice = createSlice({
     setDateValue(state: Draft<AppState>, {payload: {num, date}}: PayloadAction<{ num: number; date: Date }>) {
       state.data.dates[num] = date;
     },
-    setHourValue(state: Draft<AppState>, {payload: {x, y, hour}}: PayloadAction<{ x: number; y: number; hour: number }>) {
+    setHourValue(state: Draft<AppState>, {
+      payload: {
+        x,
+        y,
+        hour
+      }
+    }: PayloadAction<{ x: number; y: number; hour: number }>) {
       state.data.hours[x][y] = hour;
     },
     setWorksLogged(state: Draft<AppState>, {payload: {worksLogged}}: PayloadAction<{ worksLogged: WorksLogged }>) {
@@ -111,22 +117,6 @@ const slice = createSlice({
     },
     importHamsterReport(state: Draft<AppState>, {payload: {hamsterReport}}: PayloadAction<{ hamsterReport: HamsterReportElement[] }>) {
       importHamsterReportToState(hamsterReport, state);
-    },
-    createWorkLogs(state: Draft<AppState>) {
-      const toLog: ToLogElement[] = state.data.issues
-        .map((issue, y) => ({issue, y}))
-        .filter(({issue}) => issue.key.match(/^[A-Za-z]+-[0-9]+$/))
-        .flatMap(({issue, y}) => state.data.dates.map((date, x) => ({issue, date, hours: state.data.hours[x][y]})))
-        .filter(({hours}) => hours > 0)
-        .map(({issue, date, hours}) => ({
-          key: issue.key,
-          comment: issue.workLogComment || "",
-          date: date.toISOString().substr(0, 10),
-          hours: hours
-        }));
-      fetch("http://localhost:8000/createWorkLogs", {
-        method: "POST", mode: "no-cors", body: JSON.stringify({config: state.config, toLog}),
-      });
     },
     resetHours(state: Draft<AppState>) {
       state.data.hours.forEach((col, x) => col.forEach((cell, y) => (col[y] = 0)));
