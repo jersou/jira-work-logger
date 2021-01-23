@@ -8,9 +8,10 @@ export async function getHamsterReport(begin: string, end: string, ignore?: stri
     cmd: ["hamster", "export", "tsv", begin, end],
     stdout: "piped",
   }).output();
-  const lines = new TextDecoder().decode(hamsterReport).split("\n").slice(1);
-
-  return lines
+  return new TextDecoder()
+    .decode(hamsterReport)
+    .split("\n")
+    .slice(1)
     .filter((line) => line)
     .map((line) => {
       const [comment, date, , minutes, category] = line.split("\t");

@@ -1,16 +1,16 @@
 .issue {
-    max-width: 150px;
-    text-align: center;
+  max-width: 150px;
+  text-align: center;
 }
 
 .issue-summary {
-    font-size: 16px;
+  font-size: 16px;
 }
 
 .comment {
-    margin-left: 5px !important;
+  margin-left: 5px !important;
 }
 
 .comment input {
-    color: #d18d00;
+  color: #d18d00;
 }

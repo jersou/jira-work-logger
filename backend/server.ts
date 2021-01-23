@@ -1,8 +1,7 @@
 #!/usr/bin/env -S deno run --unstable --allow-net --allow-run
-import { Router } from "https://deno.land/x/oak@v6.4.1/mod.ts";
-import { Application } from "https://deno.land/x/oak@v6.4.1/mod.ts";
+import { Application } from "../deps.ts";
 import { opn } from "./opn.ts";
-import { addHamsterRoute, addJiraRoutes, addStaticFilesRoutes, addStopRoute } from "./router.ts";
+import { getRouter } from "./router.ts";
 import { runWebsocketServerAndWaitClose } from "./websocket.ts";
 
 const httpPort = 8000;
@@ -19,13 +18,7 @@ oakApp.addEventListener("listen", async () => {
   );
 });
 
-const router = new Router();
-addStopRoute(router, controller);
-addStaticFilesRoutes(router);
-addJiraRoutes(router);
-addHamsterRoute(router);
-oakApp.use(router.routes());
-
+oakApp.use(getRouter(controller).routes());
 oakApp.listen({ hostname: "127.0.0.1", port: httpPort, signal: controller.signal });
 
 if (Deno.args.includes("--wait-and-close")) {

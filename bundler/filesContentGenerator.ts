@@ -1,10 +1,8 @@
 #!/usr/bin/env -S deno run --unstable --allow-read --allow-write
 
-import { assertEquals } from "https://deno.land/std@0.75.0/testing/asserts.ts";
-import { walk } from "https://deno.land/std@0.75.0/fs/walk.ts";
+import { assertEquals, walk, dirname, fromFileUrl } from "../deps.ts";
 import { decodeQuotedPrintable, encodeQuotedPrintable } from "./quotedPrintable.ts";
 import { decodeFileContentB64, encodeFileContentB64 } from "./base64.ts";
-import { dirname, fromFileUrl } from "https://deno.land/std@0.75.0/path/posix.ts";
 
 export type EncodedFile = { content: string[]; encoding: "base64" | "quoted" };
 export type EncodedFiles = { [key: string]: EncodedFile };

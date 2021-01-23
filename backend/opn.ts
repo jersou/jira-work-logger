@@ -1,4 +1,4 @@
-// forked from https://raw.githubusercontent.com/hashrock/deno-opn/v1.1.1/opn.ts to add permission check
+// forked from https://raw.githubusercontent.com/hashrock/deno-opn/v1.1.1/opn.ts to add permission check (checkDenoPermission)
 
 const { run, build } = Deno;
 
@@ -18,7 +18,6 @@ export interface OpnOptions {
    * If `false` it's fulfilled immediately when opening the app.
    */
   wait?: boolean;
-
   checkDenoPermission?: boolean;
 }
 
@@ -37,11 +36,9 @@ export async function opn(target: string, opts?: OpnOptions) {
 
   if (build.os === "darwin") {
     cmd = "open";
-
     if (wait) {
       args.push("-W");
     }
-
     if (openApp) {
       args.push("-a", openApp);
     }
@@ -49,15 +46,12 @@ export async function opn(target: string, opts?: OpnOptions) {
     cmd = "cmd" + (isWsl ? ".exe" : "");
     args.push("/c", "start", "/b");
     target = target.replace(/&/g, "^&");
-
     if (wait) {
       args.push("/wait");
     }
-
     if (openApp) {
       args.push(openApp);
     }
-
     if (appArgs.length > 0) {
       args = args.concat(appArgs);
     }
@@ -69,19 +63,15 @@ export async function opn(target: string, opts?: OpnOptions) {
       cmd = "gio";
       args.push("open");
     }
-
     if (appArgs.length > 0) {
       args = args.concat(appArgs);
     }
   }
-
   args.push(target);
-
   if (build.os === "darwin" && appArgs.length > 0) {
     args.push("--args");
     args = args.concat(appArgs);
   }
-
   if (opts?.checkDenoPermission) {
     if ((await Deno.permissions.query({ name: "run" })).state !== "granted") {
       throw new Error(`Missing Deno run permission"`);
@@ -92,7 +82,6 @@ export async function opn(target: string, opts?: OpnOptions) {
     stdout: "inherit",
     stderr: "inherit",
   });
-
   if (wait) {
     return new Promise(async (resolve, reject) => {
       let status = await process.status();

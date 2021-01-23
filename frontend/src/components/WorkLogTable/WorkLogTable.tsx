@@ -23,7 +23,18 @@ export interface WorkLogTableProps {
 }
 
 export const WorkLogTable: React.FC<WorkLogTableProps> = (
-  {data, config, worksLogged, addRow, addColumn, removeColumn, removeRow, setDateValue, setHourValue, onIssueKeyUpdated}) => {
+  {
+    data,
+    config,
+    worksLogged,
+    addRow,
+    addColumn,
+    removeColumn,
+    removeRow,
+    setDateValue,
+    setHourValue,
+    onIssueKeyUpdated
+  }) => {
   return (
     <TableContainer component={Paper} elevation={3}>
       <Table stickyHeader size="small" style={{overflow: 'hidden'}}>

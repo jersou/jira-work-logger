@@ -23,7 +23,11 @@ export function tot(data: WorkLogTableData): number {
   )
 }
 
-export function TotColRow({addRow, data, worksLogged}: { addRow: () => void, data: WorkLogTableData, worksLogged: WorksLogged }) {
+export function TotColRow({
+                            addRow,
+                            data,
+                            worksLogged
+                          }: { addRow: () => void, data: WorkLogTableData, worksLogged: WorksLogged }) {
   return <TableRow className='total-row'>
     <TableCell align="center" className="add-button">
       <Button color="primary" onClick={addRow}><Add style={{fontSize: 40}}/></Button>
@@ -33,7 +37,12 @@ export function TotColRow({addRow, data, worksLogged}: { addRow: () => void, dat
   </TableRow>;
 }
 
-function TotDateCell({x, date, worksLogged, data}: { x: number, date: Date, worksLogged: WorksLogged, data: WorkLogTableData }) {
+function TotDateCell({
+                       x,
+                       date,
+                       worksLogged,
+                       data
+                     }: { x: number, date: Date, worksLogged: WorksLogged, data: WorkLogTableData }) {
   return <TableCell align="center" className="total">
     <div style={{color: '#a91b1b', fontSize: 16}}>Already Logged >= {getWorklogged(worksLogged, date)}</div>
     <div style={{display: 'flex', justifyContent: 'center'}}>

@@ -1,7 +1,6 @@
 #!/usr/bin/env -S deno run --unstable --allow-read --allow-write --allow-run --allow-net
 
-import { dirname, fromFileUrl } from "https://deno.land/std@0.75.0/path/posix.ts";
-import { assert } from "https://deno.land/std@0.75.0/testing/asserts.ts";
+import { dirname, fromFileUrl, assert } from "../deps.ts";
 import { genFilesContent } from "./filesContentGenerator.ts";
 
 export async function bundle() {

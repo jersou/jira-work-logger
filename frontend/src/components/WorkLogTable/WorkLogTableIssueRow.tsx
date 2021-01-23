@@ -44,7 +44,15 @@ type WorkLogTableRowProps = {
   jiraUrl: string;
 }
 
-export function WorkLogTableIssueRow({issue, y, removeRow, onIssueKeyUpdated, data, setHourValue, jiraUrl}: WorkLogTableRowProps) {
+export function WorkLogTableIssueRow({
+                                       issue,
+                                       y,
+                                       removeRow,
+                                       onIssueKeyUpdated,
+                                       data,
+                                       setHourValue,
+                                       jiraUrl
+                                     }: WorkLogTableRowProps) {
   return <TableRow className={y % 2 ? 'odd' : 'even'}>
     <IssueCell {...{issue, removeRow, y, onIssueKeyUpdated, jiraUrl}}/>
     {data.dates.map((date, x) => (
@@ -69,7 +77,13 @@ type WorkLogTableIssueRowsProps = {
   jiraUrl: string
 }
 
-export function WorkLogTableIssueRows({data, removeRow, onIssueKeyUpdated, setHourValue, jiraUrl}: WorkLogTableIssueRowsProps) {
+export function WorkLogTableIssueRows({
+                                        data,
+                                        removeRow,
+                                        onIssueKeyUpdated,
+                                        setHourValue,
+                                        jiraUrl
+                                      }: WorkLogTableIssueRowsProps) {
   return <TransitionGroup component={null}>
     {data.issues.map((issue, y) =>
       <CSSTransition timeout={1000} classNames="issue-el" key={issue.reactKey}>

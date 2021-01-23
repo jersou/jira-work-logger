@@ -1,33 +1,9 @@
-import { Router, RouterContext } from "https://deno.land/x/oak@v6.4.1/mod.ts";
-import { lookup } from "https://deno.land/x/media_types@v2.7.0/mod.ts";
+import { lookup, Router, RouterContext } from "../deps.ts";
 import { files } from "../bundler/filesContent.ts";
-import { getHamsterReport } from "./hamster.ts";
-import { ConfigData, ToLogElement } from "../frontend/src/types.ts";
 import { decodeFileContent } from "../bundler/filesContentGenerator.ts";
-
-export type jiraApiOptions = {
-  method?: string;
-  body?: string;
-};
-
-export async function jiraApi(config: ConfigData, query: string, options?: jiraApiOptions) {
-  if (!config.jiraUrl.match(/^http/)) {
-    throw new Error("bad jira url configuration");
-  }
-  const headers = new Headers();
-  headers.append("Authorization", "Basic " + btoa(`${config.username}:${config.password}`));
-  if (options?.body) {
-    headers.append("Content-Type", "application/json");
-  }
-  const url = `${config.jiraUrl}/rest/api/2/${query}`;
-  const response = await fetch(url, { ...options, headers });
-  console.log(`%c[jiraApi] ${response.status} ${options?.method || "GET"} ${url}`, "color:green");
-  return await response.json();
-}
-
-export async function jiraJql(config: ConfigData, jql: string) {
-  return await jiraApi(config, `search?fields=summary,worklog&maxResults=20&jql=${jql.replaceAll(/\s+/g, " ")}`);
-}
+import { ConfigData, ToLogElement } from "../frontend/src/types.ts";
+import { getHamsterReport } from "./hamster.ts";
+import { myLastIssues, logElement, issueSummary } from "./jira.ts";
 
 function allowLocalhost(ctx: RouterContext<Record<string | number, string | undefined>, Record<string, any>>) {
   const origin = ctx.request.headers.get("Origin");
@@ -65,16 +41,7 @@ export async function addStaticFilesRoutes(router: Router) {
 export function addJiraRoutes(router: Router) {
   router.post("/myLastIssues", async (ctx) => {
     const config: ConfigData = JSON.parse(await ctx.request.body().value);
-    const jql = `
-      (
-        assignee = currentUser()
-        AND ( resolution = Unresolved OR updatedDate >= "-14d" )
-        AND updatedDate >= startOfYear()
-      ) OR (
-        worklogAuthor = currentUser() AND worklogDate > "-14d"
-      )
-      order by updatedDate DESC`;
-    ctx.response.body = await jiraJql(config, jql);
+    ctx.response.body = await myLastIssues(config);
     ctx.response.type = "application/json";
     allowLocalhost(ctx);
   });
@@ -88,7 +55,7 @@ export function addJiraRoutes(router: Router) {
         issue = issuesCache[ctx.params.issueKey];
       } else {
         const config: ConfigData = JSON.parse(await ctx.request.body().value);
-        issue = await jiraApi(config, `issue/${ctx.params.issueKey}?fields=summary`);
+        issue = await issueSummary(config, ctx.params.issueKey);
         issuesCache[ctx.params.issueKey] = issue;
       }
       ctx.response.body = issue;
@@ -100,16 +67,9 @@ export function addJiraRoutes(router: Router) {
   router.post("/createWorkLogs", async (ctx) => {
     const { config, toLog }: { config: ConfigData; toLog: ToLogElement[] } = JSON.parse(await ctx.request.body().value);
 
-    // sequence POSTs → otherwise it causes Jira bugs on remaining and total logged (not updated)
+    // sequence POSTs → otherwise Jira bugs on remaining and total logged (not updated)
     for (const log of toLog) {
-      await jiraApi(config, `issue/${log.key}/worklog`, {
-        method: "POST",
-        body: JSON.stringify({
-          comment: log.comment,
-          started: `${log.date}T20:00:00.000+0000`,
-          timeSpent: `${log.hours}h`,
-        }),
-      });
+      await logElement(config, log);
       // sleep 200 ms
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
@@ -134,4 +94,13 @@ export function addHamsterRoute(router: Router) {
     ctx.response.type = "application/json";
     allowLocalhost(ctx);
   });
+}
+
+export function getRouter(controller: AbortController): Router {
+  const router = new Router();
+  addStopRoute(router, controller);
+  addStaticFilesRoutes(router);
+  addJiraRoutes(router);
+  addHamsterRoute(router);
+  return router;
 }

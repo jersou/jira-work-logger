@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Deno: bundler.ts" type="DenoConfigurationType" inputPath="$PROJECT_DIR$/bundler/bundler.ts" programParameters="run --unstable --allow-read --allow-write --allow-run --allow-env --allow-net" workingDirectory="$PROJECT_DIR$/bundler">
+    <method v="2" />
+  </configuration>
+</component>
