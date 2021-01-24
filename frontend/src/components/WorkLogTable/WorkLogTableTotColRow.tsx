@@ -44,7 +44,7 @@ function TotDateCell({
                        data
                      }: { x: number, date: Date, worksLogged: WorksLogged, data: WorkLogTableData }) {
   return <TableCell align="center" className="total">
-    <div style={{color: '#a91b1b', fontSize: 16}}>Already Logged >= {getWorklogged(worksLogged, date)}</div>
+    <div style={{color: '#a91b1b', fontSize: 16}}>Already Logged {">"}= {getWorklogged(worksLogged, date)}</div>
     <div style={{display: 'flex', justifyContent: 'center'}}>
       <TotDate total={round2(totColumn(data, x) + getWorklogged(worksLogged, date))}/>
     </div>
