@@ -3,3 +3,10 @@
 /bin
 /tmp
 /frontend/.eslintcache
+/.idea/highlightedFiles.xml
+/.idea/markdown.xml
+/.idea/httpRequests/
+/.idea/google-java-format.xml
+/.idea/checkstyle-idea.xml
+/frontend/.idea/checkstyle-idea.xml
+/frontend/.idea/google-java-format.xml

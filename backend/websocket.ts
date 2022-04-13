@@ -1,11 +1,11 @@
-import { WebSocket, WebSocketServer, deferred } from "../deps.ts";
+import { WebSocketClient, WebSocketServer, deferred } from "../deps.ts";
 
 // on client: new WebSocket("ws://127.0.0.1:8001")
 export function runWebsocketServerAndWaitClose() {
   const exitDeferred = deferred<number>();
   const wss = new WebSocketServer(8001);
 
-  wss.on("connection", (ws: WebSocket) => {
+  wss.on("connection", (ws: WebSocketClient) => {
     console.log("[WebSocketServer] connection");
     ws.on("close", () => {
       exitDeferred.resolve();

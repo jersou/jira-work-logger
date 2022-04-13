@@ -24,16 +24,19 @@ export type ConfigData = {
   jiraUrl: string;
   username: string;
   password: string;
+  token: string;
   hamsterIgnoreComment: string;
   hamsterDaysToImport: number;
 };
 export type WorksLogged = { [key: string]: number };
-export type WebsocketState = 'OPEN' | 'CLOSE' | 'ERROR' | 'UNDEFINED'
+export type WebsocketState = "OPEN" | "CLOSE" | "ERROR" | "UNDEFINED";
+
 export type AppState = {
   data: WorkLogTableData;
   config: ConfigData;
   worksLogged: WorksLogged;
-  websocketState: WebsocketState
+  websocketState: WebsocketState;
+  logThisWorkInProgress: boolean;
 };
 export type HamsterReportElement = {
   comment: string;

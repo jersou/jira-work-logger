@@ -9,7 +9,7 @@ const controller = new AbortController();
 
 const oakApp = new Application();
 oakApp.addEventListener("error", (evt) => console.log(evt.error));
-oakApp.addEventListener("listen", async () => {
+oakApp.addEventListener("listen", () => {
   console.log(`Listening on: http://localhost:${httpPort}`);
   opn(`http://localhost:${httpPort}`, { checkDenoPermission: true }).catch(() =>
     console.log(

@@ -13,7 +13,8 @@ export type ButtonBarProps = {
   createWorkLogs: () => void;
   setWorksLogged: ({worksLogged}: { worksLogged: WorksLogged }) => void;
   resetHours: () => void;
-  websocketState: WebsocketState
+  websocketState: WebsocketState;
+  logThisWorkInProgress: boolean;
 }
 
 export function ButtonBar({
@@ -22,7 +23,8 @@ export function ButtonBar({
                             hamsterImport,
                             createWorkLogs,
                             config,
-                            websocketState
+                            websocketState,
+                            logThisWorkInProgress
                           }: ButtonBarProps) {
   return <div className="btn-part">
     <Button variant="contained" size="small" onClick={clearData}>
@@ -34,12 +36,12 @@ export function ButtonBar({
     <Button variant="contained" size="small" onClick={hamsterImport}>
       <GetApp/> Import from Hamster
     </Button>
-    <Button variant="contained" color="primary" onClick={createWorkLogs}>
+    <Button variant="contained" color="primary" onClick={createWorkLogs} disabled={logThisWorkInProgress}>
       <Send/> Log this work logs
     </Button>
     <StopServer websocketState={websocketState}/>
     <IconButton target="_blank"
-                href={`${config.jiraUrl}/secure/TimesheetReport.jspa?reportKey=jira-timesheet-plugin:report&page=1&weekends=true&showDetails=true&reportingDay=1&numOfWeeks=1&offset=0&sum=day&targetUser=${config.username}}`}>
+                href={`${config?.jiraUrl}/secure/TimesheetReport.jspa?reportKey=jira-timesheet-plugin:report&page=1&weekends=true&showDetails=true&reportingDay=1&numOfWeeks=1&offset=0&sum=day&targetUser=${config?.username}}`}>
       <Link/>
     </IconButton>
   </div>

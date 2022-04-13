@@ -8,7 +8,6 @@ import {
   ConfigData,
   HamsterReportElement,
   IssueType,
-  ToLogElement,
   WorkLogTableData,
   WorksLogged, WebsocketState,
 } from "../types";
@@ -51,12 +50,14 @@ const getInitialState: () => AppState = () => {
         jiraUrl: "jiraUrl",
         username: "username",
         password: "password",
+        token: "token",
         hamsterDaysToImport: 5,
         hamsterIgnoreComment: ''
       },
       websocketState: 'UNDEFINED'
     };
   }
+  obj.logThisWorkInProgress = false;
   return obj;
 };
 
@@ -129,6 +130,9 @@ const slice = createSlice({
       if (websocketState === 'OPEN' || state.websocketState !== 'ERROR') {
         state.websocketState = websocketState
       }
+    },
+    setLogThisWorkInProgress(state: Draft<AppState>, {payload: {newLogThisWorkInProgress}}: PayloadAction<{ newLogThisWorkInProgress: boolean }>) {
+      state.logThisWorkInProgress = newLogThisWorkInProgress
     }
   },
 });

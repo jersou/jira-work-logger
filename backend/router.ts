@@ -70,8 +70,8 @@ export function addJiraRoutes(router: Router) {
     // sequence POSTs → otherwise Jira bugs on remaining and total logged (not updated)
     for (const log of toLog) {
       await logElement(config, log);
-      // sleep 200 ms
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // sleep 800 ms
+      await new Promise((resolve) => setTimeout(resolve, 800));
     }
 
     ctx.response.body = '{"status":"OK"}';

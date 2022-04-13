@@ -88,8 +88,9 @@ git clone https://github.com/jersou/jira-work-logger.git
 cd jira-work-logger/frontend
 yarn install
 yarn build
+cd ../bundler/
+deno run --unstable --allow-read --allow-write filesContentGenerator.ts
 cd ..
-deno run --unstable --allow-read --allow-write bundler/filesContentGenerator.ts
 deno bundle --unstable backend/server.ts dist/server.js
 deno run --unstable --allow-net --allow-run dist/server.js
 ```
@@ -97,6 +98,6 @@ deno run --unstable --allow-net --allow-run dist/server.js
 # Make the binary file
 
 ```
- deno compile --unstable --allow-net --allow-run --target x86_64-unknown-linux-gnu --output bin/Linux/Jira-Work-Logger       --lite backend/server.ts --wait-and-close
- deno compile --unstable --allow-net --allow-run --target x86_64-pc-windows-msvc   --output bin/Windows/Jira-Work-Logger.exe --lite backend/server.ts --wait-and-close
+ deno compile --unstable --allow-net --allow-run --target x86_64-unknown-linux-gnu --output bin/Linux/Jira-Work-Logger       backend/server.ts --wait-and-close
+ deno compile --unstable --allow-net --allow-run --target x86_64-pc-windows-msvc   --output bin/Windows/Jira-Work-Logger.exe backend/server.ts --wait-and-close
 ```

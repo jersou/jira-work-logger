@@ -9,4 +9,5 @@ export { assert, assertEquals } from "https://deno.land/std@0.84.0/testing/asser
 export { lookup } from "https://deno.land/x/media_types@v2.7.1/mod.ts";
 export { Application, Router } from "https://deno.land/x/oak@v6.4.2/mod.ts";
 export type { RouterContext } from "https://deno.land/x/oak@v6.4.2/mod.ts";
-export { WebSocket, WebSocketServer } from "https://deno.land/x/websocket@v0.0.6/mod.ts";
+export { WebSocketServer } from "https://deno.land/x/websocket@v0.1.3/mod.ts";
+export type { WebSocketClient } from "https://deno.land/x/websocket@v0.1.3/mod.ts";
