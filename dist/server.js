@@ -1,12 +1,13 @@
+#!/usr/bin/env -S deno run --unstable --allow-net --allow-run
 // deno-fmt-ignore-file
 // deno-lint-ignore-file
 // This code was bundled using `deno bundle` and it's not recommended to edit it manually
 
 function deferred() {
     let methods;
-    const promise = new Promise((resolve3, reject)=>{
+    const promise = new Promise((resolve, reject)=>{
         methods = {
-            resolve: resolve3,
+            resolve,
             reject
         };
     });
@@ -23,13 +24,13 @@ class MuxAsyncIterator {
     }
     async callIteratorNext(iterator) {
         try {
-            const { value: value1 , done  } = await iterator.next();
+            const { value , done  } = await iterator.next();
             if (done) {
                 --this.iteratorCount;
             } else {
                 this.yields.push({
                     iterator,
-                    value: value1
+                    value
                 });
             }
         } catch (e) {
@@ -41,8 +42,8 @@ class MuxAsyncIterator {
         while(this.iteratorCount > 0){
             await this.signal;
             for(let i = 0; i < this.yields.length; i++){
-                const { iterator , value: value2  } = this.yields[i];
-                yield value2;
+                const { iterator , value  } = this.yields[i];
+                yield value;
                 this.callIteratorNext(iterator);
             }
             if (this.throws.length) {
@@ -131,19 +132,19 @@ function encode(data) {
     const l = uint8.length;
     for(i = 2; i < l; i += 3){
         result += base64abc[uint8[i - 2] >> 2];
-        result += base64abc[(uint8[i - 2] & 3) << 4 | uint8[i - 1] >> 4];
-        result += base64abc[(uint8[i - 1] & 15) << 2 | uint8[i] >> 6];
-        result += base64abc[uint8[i] & 63];
+        result += base64abc[(uint8[i - 2] & 0x03) << 4 | uint8[i - 1] >> 4];
+        result += base64abc[(uint8[i - 1] & 0x0f) << 2 | uint8[i] >> 6];
+        result += base64abc[uint8[i] & 0x3f];
     }
     if (i === l + 1) {
         result += base64abc[uint8[i - 2] >> 2];
-        result += base64abc[(uint8[i - 2] & 3) << 4];
+        result += base64abc[(uint8[i - 2] & 0x03) << 4];
         result += "==";
     }
     if (i === l) {
         result += base64abc[uint8[i - 2] >> 2];
-        result += base64abc[(uint8[i - 2] & 3) << 4 | uint8[i - 1] >> 4];
-        result += base64abc[(uint8[i - 1] & 15) << 2];
+        result += base64abc[(uint8[i - 2] & 0x03) << 4 | uint8[i - 1] >> 4];
+        result += base64abc[(uint8[i - 1] & 0x0f) << 2];
         result += "=";
     }
     return result;
@@ -211,31 +212,31 @@ const osType = (()=>{
 })();
 const isWindows = osType === "windows";
 const CHAR_FORWARD_SLASH = 47;
-function assertPath(path1) {
-    if (typeof path1 !== "string") {
-        throw new TypeError(`Path must be a string. Received ${JSON.stringify(path1)}`);
+function assertPath(path) {
+    if (typeof path !== "string") {
+        throw new TypeError(`Path must be a string. Received ${JSON.stringify(path)}`);
     }
 }
-function isPosixPathSeparator(code1) {
-    return code1 === 47;
+function isPosixPathSeparator(code) {
+    return code === 47;
 }
-function isPathSeparator(code2) {
-    return isPosixPathSeparator(code2) || code2 === 92;
+function isPathSeparator(code) {
+    return isPosixPathSeparator(code) || code === 92;
 }
-function isWindowsDeviceRoot(code3) {
-    return code3 >= 97 && code3 <= 122 || code3 >= 65 && code3 <= 90;
+function isWindowsDeviceRoot(code) {
+    return code >= 97 && code <= 122 || code >= 65 && code <= 90;
 }
-function normalizeString(path2, allowAboveRoot, separator, isPathSeparator1) {
+function normalizeString(path, allowAboveRoot, separator, isPathSeparator) {
     let res = "";
     let lastSegmentLength = 0;
     let lastSlash = -1;
     let dots = 0;
-    let code4;
-    for(let i = 0, len = path2.length; i <= len; ++i){
-        if (i < len) code4 = path2.charCodeAt(i);
-        else if (isPathSeparator1(code4)) break;
-        else code4 = CHAR_FORWARD_SLASH;
-        if (isPathSeparator1(code4)) {
+    let code;
+    for(let i = 0, len = path.length; i <= len; ++i){
+        if (i < len) code = path.charCodeAt(i);
+        else if (isPathSeparator(code)) break;
+        else code = CHAR_FORWARD_SLASH;
+        if (isPathSeparator(code)) {
             if (lastSlash === i - 1 || dots === 1) {} else if (lastSlash !== i - 1 && dots === 2) {
                 if (res.length < 2 || lastSegmentLength !== 2 || res.charCodeAt(res.length - 1) !== 46 || res.charCodeAt(res.length - 2) !== 46) {
                     if (res.length > 2) {
@@ -264,13 +265,13 @@ function normalizeString(path2, allowAboveRoot, separator, isPathSeparator1) {
                     lastSegmentLength = 2;
                 }
             } else {
-                if (res.length > 0) res += separator + path2.slice(lastSlash + 1, i);
-                else res = path2.slice(lastSlash + 1, i);
+                if (res.length > 0) res += separator + path.slice(lastSlash + 1, i);
+                else res = path.slice(lastSlash + 1, i);
                 lastSegmentLength = i - lastSlash - 1;
             }
             lastSlash = i;
             dots = 0;
-        } else if (code4 === 46 && dots !== -1) {
+        } else if (code === 46 && dots !== -1) {
             ++dots;
         } else {
             dots = -1;
@@ -278,12 +279,12 @@ function normalizeString(path2, allowAboveRoot, separator, isPathSeparator1) {
     }
     return res;
 }
-function _format(sep3, pathObject) {
+function _format(sep, pathObject) {
     const dir = pathObject.dir || pathObject.root;
     const base = pathObject.base || (pathObject.name || "") + (pathObject.ext || "");
     if (!dir) return base;
     if (dir === pathObject.root) return dir + base;
-    return dir + sep3 + base;
+    return dir + sep + base;
 }
 const sep = "\\";
 const delimiter = ";";
@@ -292,55 +293,55 @@ function resolve(...pathSegments) {
     let resolvedTail = "";
     let resolvedAbsolute = false;
     for(let i = pathSegments.length - 1; i >= -1; i--){
-        let path3;
+        let path;
         if (i >= 0) {
-            path3 = pathSegments[i];
+            path = pathSegments[i];
         } else if (!resolvedDevice) {
             if (globalThis.Deno == null) {
                 throw new TypeError("Resolved a drive-letter-less path without a CWD.");
             }
-            path3 = Deno.cwd();
+            path = Deno.cwd();
         } else {
             if (globalThis.Deno == null) {
                 throw new TypeError("Resolved a relative path without a CWD.");
             }
-            path3 = Deno.env.get(`=${resolvedDevice}`) || Deno.cwd();
-            if (path3 === undefined || path3.slice(0, 3).toLowerCase() !== `${resolvedDevice.toLowerCase()}\\`) {
-                path3 = `${resolvedDevice}\\`;
+            path = Deno.env.get(`=${resolvedDevice}`) || Deno.cwd();
+            if (path === undefined || path.slice(0, 3).toLowerCase() !== `${resolvedDevice.toLowerCase()}\\`) {
+                path = `${resolvedDevice}\\`;
             }
         }
-        assertPath(path3);
-        const len = path3.length;
+        assertPath(path);
+        const len = path.length;
         if (len === 0) continue;
         let rootEnd = 0;
         let device = "";
-        let isAbsolute1 = false;
-        const code5 = path3.charCodeAt(0);
+        let isAbsolute = false;
+        const code = path.charCodeAt(0);
         if (len > 1) {
-            if (isPathSeparator(code5)) {
-                isAbsolute1 = true;
-                if (isPathSeparator(path3.charCodeAt(1))) {
+            if (isPathSeparator(code)) {
+                isAbsolute = true;
+                if (isPathSeparator(path.charCodeAt(1))) {
                     let j = 2;
                     let last = j;
                     for(; j < len; ++j){
-                        if (isPathSeparator(path3.charCodeAt(j))) break;
+                        if (isPathSeparator(path.charCodeAt(j))) break;
                     }
                     if (j < len && j !== last) {
-                        const firstPart = path3.slice(last, j);
+                        const firstPart = path.slice(last, j);
                         last = j;
                         for(; j < len; ++j){
-                            if (!isPathSeparator(path3.charCodeAt(j))) break;
+                            if (!isPathSeparator(path.charCodeAt(j))) break;
                         }
                         if (j < len && j !== last) {
                             last = j;
                             for(; j < len; ++j){
-                                if (isPathSeparator(path3.charCodeAt(j))) break;
+                                if (isPathSeparator(path.charCodeAt(j))) break;
                             }
                             if (j === len) {
-                                device = `\\\\${firstPart}\\${path3.slice(last)}`;
+                                device = `\\\\${firstPart}\\${path.slice(last)}`;
                                 rootEnd = j;
                             } else if (j !== last) {
-                                device = `\\\\${firstPart}\\${path3.slice(last, j)}`;
+                                device = `\\\\${firstPart}\\${path.slice(last, j)}`;
                                 rootEnd = j;
                             }
                         }
@@ -348,21 +349,21 @@ function resolve(...pathSegments) {
                 } else {
                     rootEnd = 1;
                 }
-            } else if (isWindowsDeviceRoot(code5)) {
-                if (path3.charCodeAt(1) === 58) {
-                    device = path3.slice(0, 2);
+            } else if (isWindowsDeviceRoot(code)) {
+                if (path.charCodeAt(1) === 58) {
+                    device = path.slice(0, 2);
                     rootEnd = 2;
                     if (len > 2) {
-                        if (isPathSeparator(path3.charCodeAt(2))) {
-                            isAbsolute1 = true;
+                        if (isPathSeparator(path.charCodeAt(2))) {
+                            isAbsolute = true;
                             rootEnd = 3;
                         }
                     }
                 }
             }
-        } else if (isPathSeparator(code5)) {
+        } else if (isPathSeparator(code)) {
             rootEnd = 1;
-            isAbsolute1 = true;
+            isAbsolute = true;
         }
         if (device.length > 0 && resolvedDevice.length > 0 && device.toLowerCase() !== resolvedDevice.toLowerCase()) {
             continue;
@@ -371,46 +372,46 @@ function resolve(...pathSegments) {
             resolvedDevice = device;
         }
         if (!resolvedAbsolute) {
-            resolvedTail = `${path3.slice(rootEnd)}\\${resolvedTail}`;
-            resolvedAbsolute = isAbsolute1;
+            resolvedTail = `${path.slice(rootEnd)}\\${resolvedTail}`;
+            resolvedAbsolute = isAbsolute;
         }
         if (resolvedAbsolute && resolvedDevice.length > 0) break;
     }
     resolvedTail = normalizeString(resolvedTail, !resolvedAbsolute, "\\", isPathSeparator);
     return resolvedDevice + (resolvedAbsolute ? "\\" : "") + resolvedTail || ".";
 }
-function normalize(path4) {
-    assertPath(path4);
-    const len = path4.length;
+function normalize(path) {
+    assertPath(path);
+    const len = path.length;
     if (len === 0) return ".";
     let rootEnd = 0;
     let device;
-    let isAbsolute2 = false;
-    const code6 = path4.charCodeAt(0);
+    let isAbsolute = false;
+    const code = path.charCodeAt(0);
     if (len > 1) {
-        if (isPathSeparator(code6)) {
-            isAbsolute2 = true;
-            if (isPathSeparator(path4.charCodeAt(1))) {
+        if (isPathSeparator(code)) {
+            isAbsolute = true;
+            if (isPathSeparator(path.charCodeAt(1))) {
                 let j = 2;
                 let last = j;
                 for(; j < len; ++j){
-                    if (isPathSeparator(path4.charCodeAt(j))) break;
+                    if (isPathSeparator(path.charCodeAt(j))) break;
                 }
                 if (j < len && j !== last) {
-                    const firstPart = path4.slice(last, j);
+                    const firstPart = path.slice(last, j);
                     last = j;
                     for(; j < len; ++j){
-                        if (!isPathSeparator(path4.charCodeAt(j))) break;
+                        if (!isPathSeparator(path.charCodeAt(j))) break;
                     }
                     if (j < len && j !== last) {
                         last = j;
                         for(; j < len; ++j){
-                            if (isPathSeparator(path4.charCodeAt(j))) break;
+                            if (isPathSeparator(path.charCodeAt(j))) break;
                         }
                         if (j === len) {
-                            return `\\\\${firstPart}\\${path4.slice(last)}\\`;
+                            return `\\\\${firstPart}\\${path.slice(last)}\\`;
                         } else if (j !== last) {
-                            device = `\\\\${firstPart}\\${path4.slice(last, j)}`;
+                            device = `\\\\${firstPart}\\${path.slice(last, j)}`;
                             rootEnd = j;
                         }
                     }
@@ -418,33 +419,33 @@ function normalize(path4) {
             } else {
                 rootEnd = 1;
             }
-        } else if (isWindowsDeviceRoot(code6)) {
-            if (path4.charCodeAt(1) === 58) {
-                device = path4.slice(0, 2);
+        } else if (isWindowsDeviceRoot(code)) {
+            if (path.charCodeAt(1) === 58) {
+                device = path.slice(0, 2);
                 rootEnd = 2;
                 if (len > 2) {
-                    if (isPathSeparator(path4.charCodeAt(2))) {
-                        isAbsolute2 = true;
+                    if (isPathSeparator(path.charCodeAt(2))) {
+                        isAbsolute = true;
                         rootEnd = 3;
                     }
                 }
             }
         }
-    } else if (isPathSeparator(code6)) {
+    } else if (isPathSeparator(code)) {
         return "\\";
     }
     let tail;
     if (rootEnd < len) {
-        tail = normalizeString(path4.slice(rootEnd), !isAbsolute2, "\\", isPathSeparator);
+        tail = normalizeString(path.slice(rootEnd), !isAbsolute, "\\", isPathSeparator);
     } else {
         tail = "";
     }
-    if (tail.length === 0 && !isAbsolute2) tail = ".";
-    if (tail.length > 0 && isPathSeparator(path4.charCodeAt(len - 1))) {
+    if (tail.length === 0 && !isAbsolute) tail = ".";
+    if (tail.length > 0 && isPathSeparator(path.charCodeAt(len - 1))) {
         tail += "\\";
     }
     if (device === undefined) {
-        if (isAbsolute2) {
+        if (isAbsolute) {
             if (tail.length > 0) return `\\${tail}`;
             else return "\\";
         } else if (tail.length > 0) {
@@ -452,7 +453,7 @@ function normalize(path4) {
         } else {
             return "";
         }
-    } else if (isAbsolute2) {
+    } else if (isAbsolute) {
         if (tail.length > 0) return `${device}\\${tail}`;
         else return `${device}\\`;
     } else if (tail.length > 0) {
@@ -461,16 +462,16 @@ function normalize(path4) {
         return device;
     }
 }
-function isAbsolute(path5) {
-    assertPath(path5);
-    const len = path5.length;
+function isAbsolute(path) {
+    assertPath(path);
+    const len = path.length;
     if (len === 0) return false;
-    const code7 = path5.charCodeAt(0);
-    if (isPathSeparator(code7)) {
+    const code = path.charCodeAt(0);
+    if (isPathSeparator(code)) {
         return true;
-    } else if (isWindowsDeviceRoot(code7)) {
-        if (len > 2 && path5.charCodeAt(1) === 58) {
-            if (isPathSeparator(path5.charCodeAt(2))) return true;
+    } else if (isWindowsDeviceRoot(code)) {
+        if (len > 2 && path.charCodeAt(1) === 58) {
+            if (isPathSeparator(path.charCodeAt(2))) return true;
         }
     }
     return false;
@@ -481,11 +482,11 @@ function join(...paths) {
     let joined;
     let firstPart = null;
     for(let i = 0; i < pathsCount; ++i){
-        const path6 = paths[i];
-        assertPath(path6);
-        if (path6.length > 0) {
-            if (joined === undefined) joined = firstPart = path6;
-            else joined += `\\${path6}`;
+        const path = paths[i];
+        assertPath(path);
+        if (path.length > 0) {
+            if (joined === undefined) joined = firstPart = path;
+            else joined += `\\${path}`;
         }
     }
     if (joined === undefined) return ".";
@@ -588,15 +589,15 @@ function relative(from, to) {
         return toOrig.slice(toStart, toEnd);
     }
 }
-function toNamespacedPath(path7) {
-    if (typeof path7 !== "string") return path7;
-    if (path7.length === 0) return "";
-    const resolvedPath = resolve(path7);
+function toNamespacedPath(path) {
+    if (typeof path !== "string") return path;
+    if (path.length === 0) return "";
+    const resolvedPath = resolve(path);
     if (resolvedPath.length >= 3) {
         if (resolvedPath.charCodeAt(0) === 92) {
             if (resolvedPath.charCodeAt(1) === 92) {
-                const code8 = resolvedPath.charCodeAt(2);
-                if (code8 !== 63 && code8 !== 46) {
+                const code = resolvedPath.charCodeAt(2);
+                if (code !== 63 && code !== 46) {
                     return `\\\\?\\UNC\\${resolvedPath.slice(2)}`;
                 }
             }
@@ -606,38 +607,38 @@ function toNamespacedPath(path7) {
             }
         }
     }
-    return path7;
+    return path;
 }
-function dirname(path8) {
-    assertPath(path8);
-    const len = path8.length;
+function dirname(path) {
+    assertPath(path);
+    const len = path.length;
     if (len === 0) return ".";
     let rootEnd = -1;
     let end = -1;
     let matchedSlash = true;
     let offset = 0;
-    const code9 = path8.charCodeAt(0);
+    const code = path.charCodeAt(0);
     if (len > 1) {
-        if (isPathSeparator(code9)) {
+        if (isPathSeparator(code)) {
             rootEnd = offset = 1;
-            if (isPathSeparator(path8.charCodeAt(1))) {
+            if (isPathSeparator(path.charCodeAt(1))) {
                 let j = 2;
                 let last = j;
                 for(; j < len; ++j){
-                    if (isPathSeparator(path8.charCodeAt(j))) break;
+                    if (isPathSeparator(path.charCodeAt(j))) break;
                 }
                 if (j < len && j !== last) {
                     last = j;
                     for(; j < len; ++j){
-                        if (!isPathSeparator(path8.charCodeAt(j))) break;
+                        if (!isPathSeparator(path.charCodeAt(j))) break;
                     }
                     if (j < len && j !== last) {
                         last = j;
                         for(; j < len; ++j){
-                            if (isPathSeparator(path8.charCodeAt(j))) break;
+                            if (isPathSeparator(path.charCodeAt(j))) break;
                         }
                         if (j === len) {
-                            return path8;
+                            return path;
                         }
                         if (j !== last) {
                             rootEnd = offset = j + 1;
@@ -645,19 +646,19 @@ function dirname(path8) {
                     }
                 }
             }
-        } else if (isWindowsDeviceRoot(code9)) {
-            if (path8.charCodeAt(1) === 58) {
+        } else if (isWindowsDeviceRoot(code)) {
+            if (path.charCodeAt(1) === 58) {
                 rootEnd = offset = 2;
                 if (len > 2) {
-                    if (isPathSeparator(path8.charCodeAt(2))) rootEnd = offset = 3;
+                    if (isPathSeparator(path.charCodeAt(2))) rootEnd = offset = 3;
                 }
             }
         }
-    } else if (isPathSeparator(code9)) {
-        return path8;
+    } else if (isPathSeparator(code)) {
+        return path;
     }
     for(let i = len - 1; i >= offset; --i){
-        if (isPathSeparator(path8.charCodeAt(i))) {
+        if (isPathSeparator(path.charCodeAt(i))) {
             if (!matchedSlash) {
                 end = i;
                 break;
@@ -670,30 +671,30 @@ function dirname(path8) {
         if (rootEnd === -1) return ".";
         else end = rootEnd;
     }
-    return path8.slice(0, end);
+    return path.slice(0, end);
 }
-function basename(path9, ext = "") {
+function basename(path, ext = "") {
     if (ext !== undefined && typeof ext !== "string") {
         throw new TypeError('"ext" argument must be a string');
     }
-    assertPath(path9);
+    assertPath(path);
     let start = 0;
     let end = -1;
     let matchedSlash = true;
     let i;
-    if (path9.length >= 2) {
-        const drive = path9.charCodeAt(0);
+    if (path.length >= 2) {
+        const drive = path.charCodeAt(0);
         if (isWindowsDeviceRoot(drive)) {
-            if (path9.charCodeAt(1) === 58) start = 2;
+            if (path.charCodeAt(1) === 58) start = 2;
         }
     }
-    if (ext !== undefined && ext.length > 0 && ext.length <= path9.length) {
-        if (ext.length === path9.length && ext === path9) return "";
+    if (ext !== undefined && ext.length > 0 && ext.length <= path.length) {
+        if (ext.length === path.length && ext === path) return "";
         let extIdx = ext.length - 1;
         let firstNonSlashEnd = -1;
-        for(i = path9.length - 1; i >= start; --i){
-            const code10 = path9.charCodeAt(i);
-            if (isPathSeparator(code10)) {
+        for(i = path.length - 1; i >= start; --i){
+            const code = path.charCodeAt(i);
+            if (isPathSeparator(code)) {
                 if (!matchedSlash) {
                     start = i + 1;
                     break;
@@ -704,7 +705,7 @@ function basename(path9, ext = "") {
                     firstNonSlashEnd = i + 1;
                 }
                 if (extIdx >= 0) {
-                    if (code10 === ext.charCodeAt(extIdx)) {
+                    if (code === ext.charCodeAt(extIdx)) {
                         if (--extIdx === -1) {
                             end = i;
                         }
@@ -716,11 +717,11 @@ function basename(path9, ext = "") {
             }
         }
         if (start === end) end = firstNonSlashEnd;
-        else if (end === -1) end = path9.length;
-        return path9.slice(start, end);
+        else if (end === -1) end = path.length;
+        return path.slice(start, end);
     } else {
-        for(i = path9.length - 1; i >= start; --i){
-            if (isPathSeparator(path9.charCodeAt(i))) {
+        for(i = path.length - 1; i >= start; --i){
+            if (isPathSeparator(path.charCodeAt(i))) {
                 if (!matchedSlash) {
                     start = i + 1;
                     break;
@@ -731,23 +732,23 @@ function basename(path9, ext = "") {
             }
         }
         if (end === -1) return "";
-        return path9.slice(start, end);
+        return path.slice(start, end);
     }
 }
-function extname(path10) {
-    assertPath(path10);
+function extname(path) {
+    assertPath(path);
     let start = 0;
     let startDot = -1;
     let startPart = 0;
     let end = -1;
     let matchedSlash = true;
     let preDotState = 0;
-    if (path10.length >= 2 && path10.charCodeAt(1) === 58 && isWindowsDeviceRoot(path10.charCodeAt(0))) {
+    if (path.length >= 2 && path.charCodeAt(1) === 58 && isWindowsDeviceRoot(path.charCodeAt(0))) {
         start = startPart = 2;
     }
-    for(let i = path10.length - 1; i >= start; --i){
-        const code11 = path10.charCodeAt(i);
-        if (isPathSeparator(code11)) {
+    for(let i = path.length - 1; i >= start; --i){
+        const code = path.charCodeAt(i);
+        if (isPathSeparator(code)) {
             if (!matchedSlash) {
                 startPart = i + 1;
                 break;
@@ -758,7 +759,7 @@ function extname(path10) {
             matchedSlash = false;
             end = i + 1;
         }
-        if (code11 === 46) {
+        if (code === 46) {
             if (startDot === -1) startDot = i;
             else if (preDotState !== 1) preDotState = 1;
         } else if (startDot !== -1) {
@@ -768,7 +769,7 @@ function extname(path10) {
     if (startDot === -1 || end === -1 || preDotState === 0 || preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
         return "";
     }
-    return path10.slice(startDot, end);
+    return path.slice(startDot, end);
 }
 function format(pathObject) {
     if (pathObject === null || typeof pathObject !== "object") {
@@ -776,8 +777,8 @@ function format(pathObject) {
     }
     return _format("\\", pathObject);
 }
-function parse(path11) {
-    assertPath(path11);
+function parse(path) {
+    assertPath(path);
     const ret = {
         root: "",
         dir: "",
@@ -785,28 +786,28 @@ function parse(path11) {
         ext: "",
         name: ""
     };
-    const len = path11.length;
+    const len = path.length;
     if (len === 0) return ret;
     let rootEnd = 0;
-    let code12 = path11.charCodeAt(0);
+    let code = path.charCodeAt(0);
     if (len > 1) {
-        if (isPathSeparator(code12)) {
+        if (isPathSeparator(code)) {
             rootEnd = 1;
-            if (isPathSeparator(path11.charCodeAt(1))) {
+            if (isPathSeparator(path.charCodeAt(1))) {
                 let j = 2;
                 let last = j;
                 for(; j < len; ++j){
-                    if (isPathSeparator(path11.charCodeAt(j))) break;
+                    if (isPathSeparator(path.charCodeAt(j))) break;
                 }
                 if (j < len && j !== last) {
                     last = j;
                     for(; j < len; ++j){
-                        if (!isPathSeparator(path11.charCodeAt(j))) break;
+                        if (!isPathSeparator(path.charCodeAt(j))) break;
                     }
                     if (j < len && j !== last) {
                         last = j;
                         for(; j < len; ++j){
-                            if (isPathSeparator(path11.charCodeAt(j))) break;
+                            if (isPathSeparator(path.charCodeAt(j))) break;
                         }
                         if (j === len) {
                             rootEnd = j;
@@ -816,37 +817,37 @@ function parse(path11) {
                     }
                 }
             }
-        } else if (isWindowsDeviceRoot(code12)) {
-            if (path11.charCodeAt(1) === 58) {
+        } else if (isWindowsDeviceRoot(code)) {
+            if (path.charCodeAt(1) === 58) {
                 rootEnd = 2;
                 if (len > 2) {
-                    if (isPathSeparator(path11.charCodeAt(2))) {
+                    if (isPathSeparator(path.charCodeAt(2))) {
                         if (len === 3) {
-                            ret.root = ret.dir = path11;
+                            ret.root = ret.dir = path;
                             return ret;
                         }
                         rootEnd = 3;
                     }
                 } else {
-                    ret.root = ret.dir = path11;
+                    ret.root = ret.dir = path;
                     return ret;
                 }
             }
         }
-    } else if (isPathSeparator(code12)) {
-        ret.root = ret.dir = path11;
+    } else if (isPathSeparator(code)) {
+        ret.root = ret.dir = path;
         return ret;
     }
-    if (rootEnd > 0) ret.root = path11.slice(0, rootEnd);
+    if (rootEnd > 0) ret.root = path.slice(0, rootEnd);
     let startDot = -1;
     let startPart = rootEnd;
     let end = -1;
     let matchedSlash = true;
-    let i = path11.length - 1;
+    let i = path.length - 1;
     let preDotState = 0;
     for(; i >= rootEnd; --i){
-        code12 = path11.charCodeAt(i);
-        if (isPathSeparator(code12)) {
+        code = path.charCodeAt(i);
+        if (isPathSeparator(code)) {
             if (!matchedSlash) {
                 startPart = i + 1;
                 break;
@@ -857,7 +858,7 @@ function parse(path11) {
             matchedSlash = false;
             end = i + 1;
         }
-        if (code12 === 46) {
+        if (code === 46) {
             if (startDot === -1) startDot = i;
             else if (preDotState !== 1) preDotState = 1;
         } else if (startDot !== -1) {
@@ -866,15 +867,15 @@ function parse(path11) {
     }
     if (startDot === -1 || end === -1 || preDotState === 0 || preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
         if (end !== -1) {
-            ret.base = ret.name = path11.slice(startPart, end);
+            ret.base = ret.name = path.slice(startPart, end);
         }
     } else {
-        ret.name = path11.slice(startPart, startDot);
-        ret.base = path11.slice(startPart, end);
-        ret.ext = path11.slice(startDot, end);
+        ret.name = path.slice(startPart, startDot);
+        ret.base = path.slice(startPart, end);
+        ret.ext = path.slice(startDot, end);
     }
     if (startPart > 0 && startPart !== rootEnd) {
-        ret.dir = path11.slice(0, startPart - 1);
+        ret.dir = path.slice(0, startPart - 1);
     } else ret.dir = ret.root;
     return ret;
 }
@@ -883,17 +884,17 @@ function fromFileUrl(url) {
     if (url.protocol != "file:") {
         throw new TypeError("Must be a file URL.");
     }
-    let path12 = decodeURIComponent(url.pathname.replace(/\//g, "\\").replace(/%(?![0-9A-Fa-f]{2})/g, "%25")).replace(/^\\*([A-Za-z]:)(\\|$)/, "$1\\");
+    let path = decodeURIComponent(url.pathname.replace(/\//g, "\\").replace(/%(?![0-9A-Fa-f]{2})/g, "%25")).replace(/^\\*([A-Za-z]:)(\\|$)/, "$1\\");
     if (url.hostname != "") {
-        path12 = `\\\\${url.hostname}${path12}`;
+        path = `\\\\${url.hostname}${path}`;
     }
-    return path12;
+    return path;
 }
-function toFileUrl(path13) {
-    if (!isAbsolute(path13)) {
+function toFileUrl(path) {
+    if (!isAbsolute(path)) {
         throw new TypeError("Must be an absolute path.");
     }
-    const [, hostname, pathname] = path13.match(/^(?:[/\\]{2}([^/\\]+)(?=[/\\][^/\\]))?(.*)/);
+    const [, hostname, pathname] = path.match(/^(?:[/\\]{2}([^/\\]+)(?=[/\\][^/\\]))?(.*)/);
     const url = new URL("file:///");
     url.pathname = pathname.replace(/%/g, "%25");
     if (hostname != null) {
@@ -927,20 +928,20 @@ function resolve1(...pathSegments) {
     let resolvedPath = "";
     let resolvedAbsolute = false;
     for(let i = pathSegments.length - 1; i >= -1 && !resolvedAbsolute; i--){
-        let path14;
-        if (i >= 0) path14 = pathSegments[i];
+        let path;
+        if (i >= 0) path = pathSegments[i];
         else {
             if (globalThis.Deno == null) {
                 throw new TypeError("Resolved a relative path without a CWD.");
             }
-            path14 = Deno.cwd();
+            path = Deno.cwd();
         }
-        assertPath(path14);
-        if (path14.length === 0) {
+        assertPath(path);
+        if (path.length === 0) {
             continue;
         }
-        resolvedPath = `${path14}/${resolvedPath}`;
-        resolvedAbsolute = path14.charCodeAt(0) === CHAR_FORWARD_SLASH;
+        resolvedPath = `${path}/${resolvedPath}`;
+        resolvedAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute, "/", isPosixPathSeparator);
     if (resolvedAbsolute) {
@@ -949,30 +950,30 @@ function resolve1(...pathSegments) {
     } else if (resolvedPath.length > 0) return resolvedPath;
     else return ".";
 }
-function normalize1(path15) {
-    assertPath(path15);
-    if (path15.length === 0) return ".";
-    const isAbsolute1 = path15.charCodeAt(0) === 47;
-    const trailingSeparator = path15.charCodeAt(path15.length - 1) === 47;
-    path15 = normalizeString(path15, !isAbsolute1, "/", isPosixPathSeparator);
-    if (path15.length === 0 && !isAbsolute1) path15 = ".";
-    if (path15.length > 0 && trailingSeparator) path15 += "/";
-    if (isAbsolute1) return `/${path15}`;
-    return path15;
+function normalize1(path) {
+    assertPath(path);
+    if (path.length === 0) return ".";
+    const isAbsolute = path.charCodeAt(0) === 47;
+    const trailingSeparator = path.charCodeAt(path.length - 1) === 47;
+    path = normalizeString(path, !isAbsolute, "/", isPosixPathSeparator);
+    if (path.length === 0 && !isAbsolute) path = ".";
+    if (path.length > 0 && trailingSeparator) path += "/";
+    if (isAbsolute) return `/${path}`;
+    return path;
 }
-function isAbsolute1(path16) {
-    assertPath(path16);
-    return path16.length > 0 && path16.charCodeAt(0) === 47;
+function isAbsolute1(path) {
+    assertPath(path);
+    return path.length > 0 && path.charCodeAt(0) === 47;
 }
 function join1(...paths) {
     if (paths.length === 0) return ".";
     let joined;
     for(let i = 0, len = paths.length; i < len; ++i){
-        const path17 = paths[i];
-        assertPath(path17);
-        if (path17.length > 0) {
-            if (!joined) joined = path17;
-            else joined += `/${path17}`;
+        const path = paths[i];
+        assertPath(path);
+        if (path.length > 0) {
+            if (!joined) joined = path;
+            else joined += `/${path}`;
         }
     }
     if (!joined) return ".";
@@ -1036,17 +1037,17 @@ function relative1(from, to) {
         return to.slice(toStart);
     }
 }
-function toNamespacedPath1(path18) {
-    return path18;
+function toNamespacedPath1(path) {
+    return path;
 }
-function dirname1(path19) {
-    assertPath(path19);
-    if (path19.length === 0) return ".";
-    const hasRoot = path19.charCodeAt(0) === 47;
+function dirname1(path) {
+    assertPath(path);
+    if (path.length === 0) return ".";
+    const hasRoot = path.charCodeAt(0) === 47;
     let end = -1;
     let matchedSlash = true;
-    for(let i = path19.length - 1; i >= 1; --i){
-        if (path19.charCodeAt(i) === 47) {
+    for(let i = path.length - 1; i >= 1; --i){
+        if (path.charCodeAt(i) === 47) {
             if (!matchedSlash) {
                 end = i;
                 break;
@@ -1057,24 +1058,24 @@ function dirname1(path19) {
     }
     if (end === -1) return hasRoot ? "/" : ".";
     if (hasRoot && end === 1) return "//";
-    return path19.slice(0, end);
+    return path.slice(0, end);
 }
-function basename1(path20, ext = "") {
+function basename1(path, ext = "") {
     if (ext !== undefined && typeof ext !== "string") {
         throw new TypeError('"ext" argument must be a string');
     }
-    assertPath(path20);
+    assertPath(path);
     let start = 0;
     let end = -1;
     let matchedSlash = true;
     let i;
-    if (ext !== undefined && ext.length > 0 && ext.length <= path20.length) {
-        if (ext.length === path20.length && ext === path20) return "";
+    if (ext !== undefined && ext.length > 0 && ext.length <= path.length) {
+        if (ext.length === path.length && ext === path) return "";
         let extIdx = ext.length - 1;
         let firstNonSlashEnd = -1;
-        for(i = path20.length - 1; i >= 0; --i){
-            const code13 = path20.charCodeAt(i);
-            if (code13 === 47) {
+        for(i = path.length - 1; i >= 0; --i){
+            const code = path.charCodeAt(i);
+            if (code === 47) {
                 if (!matchedSlash) {
                     start = i + 1;
                     break;
@@ -1085,7 +1086,7 @@ function basename1(path20, ext = "") {
                     firstNonSlashEnd = i + 1;
                 }
                 if (extIdx >= 0) {
-                    if (code13 === ext.charCodeAt(extIdx)) {
+                    if (code === ext.charCodeAt(extIdx)) {
                         if (--extIdx === -1) {
                             end = i;
                         }
@@ -1097,11 +1098,11 @@ function basename1(path20, ext = "") {
             }
         }
         if (start === end) end = firstNonSlashEnd;
-        else if (end === -1) end = path20.length;
-        return path20.slice(start, end);
+        else if (end === -1) end = path.length;
+        return path.slice(start, end);
     } else {
-        for(i = path20.length - 1; i >= 0; --i){
-            if (path20.charCodeAt(i) === 47) {
+        for(i = path.length - 1; i >= 0; --i){
+            if (path.charCodeAt(i) === 47) {
                 if (!matchedSlash) {
                     start = i + 1;
                     break;
@@ -1112,19 +1113,19 @@ function basename1(path20, ext = "") {
             }
         }
         if (end === -1) return "";
-        return path20.slice(start, end);
+        return path.slice(start, end);
     }
 }
-function extname1(path21) {
-    assertPath(path21);
+function extname1(path) {
+    assertPath(path);
     let startDot = -1;
     let startPart = 0;
     let end = -1;
     let matchedSlash = true;
     let preDotState = 0;
-    for(let i = path21.length - 1; i >= 0; --i){
-        const code14 = path21.charCodeAt(i);
-        if (code14 === 47) {
+    for(let i = path.length - 1; i >= 0; --i){
+        const code = path.charCodeAt(i);
+        if (code === 47) {
             if (!matchedSlash) {
                 startPart = i + 1;
                 break;
@@ -1135,7 +1136,7 @@ function extname1(path21) {
             matchedSlash = false;
             end = i + 1;
         }
-        if (code14 === 46) {
+        if (code === 46) {
             if (startDot === -1) startDot = i;
             else if (preDotState !== 1) preDotState = 1;
         } else if (startDot !== -1) {
@@ -1145,7 +1146,7 @@ function extname1(path21) {
     if (startDot === -1 || end === -1 || preDotState === 0 || preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
         return "";
     }
-    return path21.slice(startDot, end);
+    return path.slice(startDot, end);
 }
 function format1(pathObject) {
     if (pathObject === null || typeof pathObject !== "object") {
@@ -1153,8 +1154,8 @@ function format1(pathObject) {
     }
     return _format("/", pathObject);
 }
-function parse1(path22) {
-    assertPath(path22);
+function parse1(path) {
+    assertPath(path);
     const ret = {
         root: "",
         dir: "",
@@ -1162,10 +1163,10 @@ function parse1(path22) {
         ext: "",
         name: ""
     };
-    if (path22.length === 0) return ret;
-    const isAbsolute2 = path22.charCodeAt(0) === 47;
+    if (path.length === 0) return ret;
+    const isAbsolute = path.charCodeAt(0) === 47;
     let start;
-    if (isAbsolute2) {
+    if (isAbsolute) {
         ret.root = "/";
         start = 1;
     } else {
@@ -1175,11 +1176,11 @@ function parse1(path22) {
     let startPart = 0;
     let end = -1;
     let matchedSlash = true;
-    let i = path22.length - 1;
+    let i = path.length - 1;
     let preDotState = 0;
     for(; i >= start; --i){
-        const code15 = path22.charCodeAt(i);
-        if (code15 === 47) {
+        const code = path.charCodeAt(i);
+        if (code === 47) {
             if (!matchedSlash) {
                 startPart = i + 1;
                 break;
@@ -1190,7 +1191,7 @@ function parse1(path22) {
             matchedSlash = false;
             end = i + 1;
         }
-        if (code15 === 46) {
+        if (code === 46) {
             if (startDot === -1) startDot = i;
             else if (preDotState !== 1) preDotState = 1;
         } else if (startDot !== -1) {
@@ -1199,24 +1200,24 @@ function parse1(path22) {
     }
     if (startDot === -1 || end === -1 || preDotState === 0 || preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
         if (end !== -1) {
-            if (startPart === 0 && isAbsolute2) {
-                ret.base = ret.name = path22.slice(1, end);
+            if (startPart === 0 && isAbsolute) {
+                ret.base = ret.name = path.slice(1, end);
             } else {
-                ret.base = ret.name = path22.slice(startPart, end);
+                ret.base = ret.name = path.slice(startPart, end);
             }
         }
     } else {
-        if (startPart === 0 && isAbsolute2) {
-            ret.name = path22.slice(1, startDot);
-            ret.base = path22.slice(1, end);
+        if (startPart === 0 && isAbsolute) {
+            ret.name = path.slice(1, startDot);
+            ret.base = path.slice(1, end);
         } else {
-            ret.name = path22.slice(startPart, startDot);
-            ret.base = path22.slice(startPart, end);
+            ret.name = path.slice(startPart, startDot);
+            ret.base = path.slice(startPart, end);
         }
-        ret.ext = path22.slice(startDot, end);
+        ret.ext = path.slice(startDot, end);
     }
-    if (startPart > 0) ret.dir = path22.slice(0, startPart - 1);
-    else if (isAbsolute2) ret.dir = "/";
+    if (startPart > 0) ret.dir = path.slice(0, startPart - 1);
+    else if (isAbsolute) ret.dir = "/";
     return ret;
 }
 function fromFileUrl1(url) {
@@ -1226,12 +1227,12 @@ function fromFileUrl1(url) {
     }
     return decodeURIComponent(url.pathname.replace(/%(?![0-9A-Fa-f]{2})/g, "%25"));
 }
-function toFileUrl1(path23) {
-    if (!isAbsolute1(path23)) {
+function toFileUrl1(path) {
+    if (!isAbsolute1(path)) {
         throw new TypeError("Must be an absolute path.");
     }
     const url = new URL("file:///");
-    url.pathname = path23.replace(/%/g, "%25").replace(/\\/g, "%5C");
+    url.pathname = path.replace(/%/g, "%25").replace(/\\/g, "%5C");
     return url;
 }
 const mod1 = {
@@ -1252,30 +1253,27 @@ const mod1 = {
     toFileUrl: toFileUrl1
 };
 const path = isWindows ? mod : mod1;
-const { basename: basename2 , delimiter: delimiter2 , dirname: dirname2 , extname: extname2 , format: format2 , fromFileUrl: fromFileUrl2 , isAbsolute: isAbsolute2 , join: join2 , normalize: normalize2 , parse: parse2 , relative: relative2 , resolve: resolve2 , sep: sep2 , toFileUrl: toFileUrl2 , toNamespacedPath: toNamespacedPath2 ,  } = path;
-async function _createWalkEntry(path24) {
-    path24 = normalize2(path24);
-    const name = basename2(path24);
-    const info = await Deno.stat(path24);
+const { basename: basename2 , delimiter: delimiter2 , dirname: dirname2 , extname: extname2 , format: format2 , fromFileUrl: fromFileUrl2 , isAbsolute: isAbsolute2 , join: join2 , normalize: normalize2 , parse: parse2 , relative: relative2 , resolve: resolve2 , sep: sep2 , toFileUrl: toFileUrl2 , toNamespacedPath: toNamespacedPath2  } = path;
+async function _createWalkEntry(path) {
+    path = normalize2(path);
+    const name = basename2(path);
+    const info = await Deno.stat(path);
     return {
-        path: path24,
+        path,
         name,
         isFile: info.isFile,
         isDirectory: info.isDirectory,
         isSymlink: info.isSymlink
     };
 }
-function include(path25, exts, match, skip) {
-    if (exts && !exts.some((ext)=>path25.endsWith(ext)
-    )) {
+function include(path, exts, match, skip) {
+    if (exts && !exts.some((ext)=>path.endsWith(ext))) {
         return false;
     }
-    if (match && !match.some((pattern)=>!!path25.match(pattern)
-    )) {
+    if (match && !match.some((pattern)=>!!path.match(pattern))) {
         return false;
     }
-    if (skip && skip.some((pattern)=>!!path25.match(pattern)
-    )) {
+    if (skip && skip.some((pattern)=>!!path.match(pattern))) {
         return false;
     }
     return true;
@@ -1292,23 +1290,23 @@ async function* walk(root, { maxDepth =Infinity , includeFiles =true , includeDi
     }
     for await (const entry of Deno.readDir(root)){
         assert(entry.name != null);
-        let path26 = join2(root, entry.name);
+        let path = join2(root, entry.name);
         if (entry.isSymlink) {
             if (followSymlinks) {
-                path26 = await Deno.realPath(path26);
+                path = await Deno.realPath(path);
             } else {
                 continue;
             }
         }
         if (entry.isFile) {
-            if (includeFiles && include(path26, exts, match, skip)) {
+            if (includeFiles && include(path, exts, match, skip)) {
                 yield {
-                    path: path26,
+                    path,
                     ...entry
                 };
             }
         } else {
-            yield* walk(path26, {
+            yield* walk(path, {
                 maxDepth: maxDepth - 1,
                 includeFiles,
                 includeDirs,
@@ -1426,10 +1424,10 @@ class BufReader {
         if (p.byteLength === 0) return rr;
         if (this.r === this.w) {
             if (p.byteLength >= this.buf.byteLength) {
-                const rr = await this.rd.read(p);
-                const nread = rr ?? 0;
+                const rr1 = await this.rd.read(p);
+                const nread = rr1 ?? 0;
                 assert(nread >= 0, "negative read");
-                return rr;
+                return rr1;
             }
             this.r = 0;
             this.w = 0;
@@ -1651,63 +1649,6 @@ class BufWriter extends AbstractBufBase {
     }
     writer;
 }
-class BufWriterSync extends AbstractBufBase {
-    static create(writer, size = 4096) {
-        return writer instanceof BufWriterSync ? writer : new BufWriterSync(writer, size);
-    }
-    constructor(writer, size = 4096){
-        super();
-        this.writer = writer;
-        if (size <= 0) {
-            size = DEFAULT_BUF_SIZE;
-        }
-        this.buf = new Uint8Array(size);
-    }
-    reset(w) {
-        this.err = null;
-        this.usedBufferBytes = 0;
-        this.writer = w;
-    }
-    flush() {
-        if (this.err !== null) throw this.err;
-        if (this.usedBufferBytes === 0) return;
-        try {
-            Deno.writeAllSync(this.writer, this.buf.subarray(0, this.usedBufferBytes));
-        } catch (e) {
-            this.err = e;
-            throw e;
-        }
-        this.buf = new Uint8Array(this.buf.length);
-        this.usedBufferBytes = 0;
-    }
-    writeSync(data) {
-        if (this.err !== null) throw this.err;
-        if (data.length === 0) return 0;
-        let totalBytesWritten = 0;
-        let numBytesWritten = 0;
-        while(data.byteLength > this.available()){
-            if (this.buffered() === 0) {
-                try {
-                    numBytesWritten = this.writer.writeSync(data);
-                } catch (e) {
-                    this.err = e;
-                    throw e;
-                }
-            } else {
-                numBytesWritten = copy(data, this.buf, this.usedBufferBytes);
-                this.usedBufferBytes += numBytesWritten;
-                this.flush();
-            }
-            totalBytesWritten += numBytesWritten;
-            data = data.subarray(numBytesWritten);
-        }
-        numBytesWritten = copy(data, this.buf, this.usedBufferBytes);
-        this.usedBufferBytes += numBytesWritten;
-        totalBytesWritten += numBytesWritten;
-        return totalBytesWritten;
-    }
-    writer;
-}
 const noColor = globalThis.Deno?.noColor ?? true;
 let enabled = !noColor;
 function code(open, close) {
@@ -1717,46 +1658,46 @@ function code(open, close) {
         regexp: new RegExp(`\\x1b\\[${close}m`, "g")
     };
 }
-function run(str2, code1) {
-    return enabled ? `${code1.open}${str2.replace(code1.regexp, code1.open)}${code1.close}` : str2;
+function run(str, code) {
+    return enabled ? `${code.open}${str.replace(code.regexp, code.open)}${code.close}` : str;
 }
-function bold(str3) {
-    return run(str3, code([
+function bold(str) {
+    return run(str, code([
         1
     ], 22));
 }
-function red(str4) {
-    return run(str4, code([
+function red(str) {
+    return run(str, code([
         31
     ], 39));
 }
-function green(str5) {
-    return run(str5, code([
+function green(str) {
+    return run(str, code([
         32
     ], 39));
 }
-function white(str6) {
-    return run(str6, code([
+function white(str) {
+    return run(str, code([
         37
     ], 39));
 }
-function gray(str7) {
-    return brightBlack(str7);
+function gray(str) {
+    return brightBlack(str);
 }
-function brightBlack(str8) {
-    return run(str8, code([
+function brightBlack(str) {
+    return run(str, code([
         90
     ], 39));
 }
 new RegExp([
     "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
-    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))", 
+    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))"
 ].join("|"), "g");
 var DiffType;
-(function(DiffType2) {
-    DiffType2["removed"] = "removed";
-    DiffType2["common"] = "common";
-    DiffType2["added"] = "added";
+(function(DiffType) {
+    DiffType["removed"] = "removed";
+    DiffType["common"] = "common";
+    DiffType["added"] = "added";
 })(DiffType || (DiffType = {}));
 const REMOVED = 1;
 const COMMON = 2;
@@ -1773,48 +1714,45 @@ function createCommon(A, B, reverse) {
     }
     return common;
 }
-function diff(A1, B1) {
-    const prefixCommon = createCommon(A1, B1);
-    const suffixCommon = createCommon(A1.slice(prefixCommon.length), B1.slice(prefixCommon.length), true).reverse();
-    A1 = suffixCommon.length ? A1.slice(prefixCommon.length, -suffixCommon.length) : A1.slice(prefixCommon.length);
-    B1 = suffixCommon.length ? B1.slice(prefixCommon.length, -suffixCommon.length) : B1.slice(prefixCommon.length);
-    const swapped1 = B1.length > A1.length;
-    [A1, B1] = swapped1 ? [
-        B1,
-        A1
+function diff(A, B) {
+    const prefixCommon = createCommon(A, B);
+    const suffixCommon = createCommon(A.slice(prefixCommon.length), B.slice(prefixCommon.length), true).reverse();
+    A = suffixCommon.length ? A.slice(prefixCommon.length, -suffixCommon.length) : A.slice(prefixCommon.length);
+    B = suffixCommon.length ? B.slice(prefixCommon.length, -suffixCommon.length) : B.slice(prefixCommon.length);
+    const swapped = B.length > A.length;
+    [A, B] = swapped ? [
+        B,
+        A
     ] : [
-        A1,
-        B1
+        A,
+        B
     ];
-    const M1 = A1.length;
-    const N1 = B1.length;
-    if (!M1 && !N1 && !suffixCommon.length && !prefixCommon.length) return [];
-    if (!N1) {
+    const M = A.length;
+    const N = B.length;
+    if (!M && !N && !suffixCommon.length && !prefixCommon.length) return [];
+    if (!N) {
         return [
             ...prefixCommon.map((c)=>({
                     type: DiffType.common,
                     value: c
-                })
-            ),
-            ...A1.map((a)=>({
-                    type: swapped1 ? DiffType.added : DiffType.removed,
+                })),
+            ...A.map((a)=>({
+                    type: swapped ? DiffType.added : DiffType.removed,
                     value: a
-                })
-            ),
+                })),
             ...suffixCommon.map((c)=>({
                     type: DiffType.common,
                     value: c
-                })
-            ), 
+                }))
         ];
     }
-    const offset = N1;
-    const delta = M1 - N1;
-    const size = M1 + N1 + 1;
-    const fp1 = new Array(size).fill({
+    const offset = N;
+    const delta = M - N;
+    const size = M + N + 1;
+    const fp = new Array(size).fill({
         y: -1
     });
-    const routes = new Uint32Array((M1 * N1 + size + 1) * 2);
+    const routes = new Uint32Array((M * N + size + 1) * 2);
     const diffTypesPtrOffset = routes.length / 2;
     let ptr = 0;
     let p = -1;
@@ -1871,9 +1809,9 @@ function diff(A1, B1) {
                 id: ptr
             };
         } else {
-            const prev = down.id;
+            const prev1 = down.id;
             ptr++;
-            routes[ptr] = prev;
+            routes[ptr] = prev1;
             routes[ptr + diffTypesPtrOffset] = REMOVED;
             return {
                 y: down.y + 1,
@@ -1899,28 +1837,26 @@ function diff(A1, B1) {
         }
         return fp;
     }
-    while(fp1[delta + offset].y < N1){
+    while(fp[delta + offset].y < N){
         p = p + 1;
         for(let k = -p; k < delta; ++k){
-            fp1[k + offset] = snake(k, fp1[k - 1 + offset], fp1[k + 1 + offset], offset, A1, B1);
+            fp[k + offset] = snake(k, fp[k - 1 + offset], fp[k + 1 + offset], offset, A, B);
         }
         for(let k1 = delta + p; k1 > delta; --k1){
-            fp1[k1 + offset] = snake(k1, fp1[k1 - 1 + offset], fp1[k1 + 1 + offset], offset, A1, B1);
+            fp[k1 + offset] = snake(k1, fp[k1 - 1 + offset], fp[k1 + 1 + offset], offset, A, B);
         }
-        fp1[delta + offset] = snake(delta, fp1[delta - 1 + offset], fp1[delta + 1 + offset], offset, A1, B1);
+        fp[delta + offset] = snake(delta, fp[delta - 1 + offset], fp[delta + 1 + offset], offset, A, B);
     }
     return [
         ...prefixCommon.map((c)=>({
                 type: DiffType.common,
                 value: c
-            })
-        ),
-        ...backTrace(A1, B1, fp1[delta + offset], swapped1),
+            })),
+        ...backTrace(A, B, fp[delta + offset], swapped),
         ...suffixCommon.map((c)=>({
                 type: DiffType.common,
                 value: c
-            })
-        ), 
+            }))
     ];
 }
 const CAN_NOT_DISPLAY = "[Cannot display]";
@@ -1942,11 +1878,9 @@ function _format1(v) {
 function createColor(diffType) {
     switch(diffType){
         case DiffType.added:
-            return (s)=>green(bold(s))
-            ;
+            return (s)=>green(bold(s));
         case DiffType.removed:
-            return (s)=>red(bold(s))
-            ;
+            return (s)=>red(bold(s));
         default:
             return white;
     }
@@ -1979,12 +1913,11 @@ function isKeyedCollection(x) {
     return [
         Symbol.iterator,
         "size"
-    ].every((k)=>k in x
-    );
+    ].every((k)=>k in x);
 }
 function equal(c, d) {
     const seen = new Map();
-    return function compare1(a, b) {
+    return function compare(a, b) {
         if (a && b && (a instanceof RegExp && b instanceof RegExp || a instanceof URL && b instanceof URL)) {
             return String(a) === String(b);
         }
@@ -2013,7 +1946,7 @@ function equal(c, d) {
                 let unmatchedEntries = a.size;
                 for (const [aKey, aValue] of a.entries()){
                     for (const [bKey, bValue] of b.entries()){
-                        if (aKey === aValue && bKey === bValue && compare1(aKey, bKey) || compare1(aKey, bKey) && compare1(aValue, bValue)) {
+                        if (aKey === aValue && bKey === bValue && compare(aKey, bKey) || compare(aKey, bKey) && compare(aValue, bValue)) {
                             unmatchedEntries--;
                         }
                     }
@@ -2024,8 +1957,8 @@ function equal(c, d) {
                 ...a,
                 ...b
             };
-            for(const key1 in merged){
-                if (!compare1(a && a[key1], b && b[key1])) {
+            for(const key in merged){
+                if (!compare(a && a[key], b && b[key])) {
                     return false;
                 }
             }
@@ -10356,7 +10289,7 @@ const EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/;
 const TEXT_TYPE_REGEXP = /^text\//i;
 const extensions = new Map();
 const types = new Map();
-function populateMaps(extensions1, types1) {
+function populateMaps(extensions, types) {
     const preference = [
         "nginx",
         "apache",
@@ -10369,9 +10302,9 @@ function populateMaps(extensions1, types1) {
         if (!exts || !exts.length) {
             continue;
         }
-        extensions1.set(type, exts);
+        extensions.set(type, exts);
         for (const ext of exts){
-            const current = types1.get(ext);
+            const current = types.get(ext);
             if (current) {
                 const from = preference.indexOf(db[current].source);
                 const to = preference.indexOf(mime.source);
@@ -10379,7 +10312,7 @@ function populateMaps(extensions1, types1) {
                     continue;
                 }
             }
-            types1.set(ext, type);
+            types.set(ext, type);
         }
     }
 }
@@ -10399,12 +10332,12 @@ function charset(type) {
     }
     return undefined;
 }
-function lookup(path27) {
-    const extension1 = extname2("x." + path27).toLowerCase().substr(1);
-    return types.get(extension1);
+function lookup(path) {
+    const extension = extname2("x." + path).toLowerCase().substr(1);
+    return types.get(extension);
 }
-function contentType(str9) {
-    let mime = str9.includes("/") ? str9 : lookup(str9);
+function contentType(str) {
+    let mime = str.includes("/") ? str : lookup(str);
     if (!mime) {
         return undefined;
     }
@@ -10447,9 +10380,9 @@ function pushCookie(headers, cookie) {
     }
     headers.push(cookie.toHeader());
 }
-function validateCookieProperty(key2, value3) {
-    if (value3 && !FIELD_CONTENT_REGEXP.test(value3)) {
-        throw new TypeError(`The ${key2} of the cookie (${value3}) is invalid.`);
+function validateCookieProperty(key, value) {
+    if (value && !FIELD_CONTENT_REGEXP.test(value)) {
+        throw new TypeError(`The ${key} of the cookie (${value}) is invalid.`);
     }
 }
 class Cookie {
@@ -10464,11 +10397,11 @@ class Cookie {
     secure = false;
     signed;
     value;
-    constructor(name, value4, attributes){
+    constructor(name, value, attributes){
         validateCookieProperty("name", name);
-        validateCookieProperty("value", value4);
+        validateCookieProperty("value", value);
         this.name = name;
-        this.value = value4 ?? "";
+        this.value = value ?? "";
         Object.assign(this, attributes);
         if (!this.value) {
             this.expires = new Date(0);
@@ -10526,16 +10459,16 @@ class Cookies {
         }
         let matches;
         while(matches = KEY_REGEXP.exec(header)){
-            const [, key3] = matches;
-            result.push(key3);
+            const [, key] = matches;
+            result.push(key);
         }
         return result;
     };
-    constructor(request, response1, options = {}){
+    constructor(request, response, options = {}){
         const { keys , secure  } = options;
         this.#keys = keys;
         this.#request = request;
-        this.#response = response1;
+        this.#response = response;
         this.#secure = secure;
     }
     delete(name, options = {}) {
@@ -10544,22 +10477,22 @@ class Cookies {
     }
     *entries() {
         const keys = this.#requestKeys();
-        for (const key4 of keys){
-            const value5 = this.get(key4);
-            if (value5) {
+        for (const key of keys){
+            const value = this.get(key);
+            if (value) {
                 yield [
-                    key4,
-                    value5
+                    key,
+                    value
                 ];
             }
         }
     }
     forEach(callback, thisArg = null) {
         const keys = this.#requestKeys();
-        for (const key5 of keys){
-            const value6 = this.get(key5);
-            if (value6) {
-                callback.call(thisArg, key5, value6, this);
+        for (const key of keys){
+            const value = this.get(key);
+            if (value) {
+                callback.call(thisArg, key, value, this);
             }
         }
     }
@@ -10574,9 +10507,9 @@ class Cookies {
         if (!match) {
             return;
         }
-        const [, value7] = match;
+        const [, value] = match;
         if (!signed) {
-            return value7;
+            return value;
         }
         const digest = this.get(nameSig, {
             signed: false
@@ -10584,7 +10517,7 @@ class Cookies {
         if (!digest) {
             return;
         }
-        const data = `${name}=${value7}`;
+        const data = `${name}=${value}`;
         if (!this.#keys) {
             throw new TypeError("keys required for signed cookies");
         }
@@ -10600,22 +10533,22 @@ class Cookies {
                     signed: false
                 });
             }
-            return value7;
+            return value;
         }
     }
     *keys() {
         const keys = this.#requestKeys();
-        for (const key6 of keys){
-            const value8 = this.get(key6);
-            if (value8) {
-                yield key6;
+        for (const key of keys){
+            const value = this.get(key);
+            if (value) {
+                yield key;
             }
         }
     }
-    set(name, value9, options = {}) {
+    set(name, value, options = {}) {
         const request = this.#request;
-        const response2 = this.#response;
-        let headers = response2.headers.get("Set-Cookie") ?? [];
+        const response = this.#response;
+        let headers = response.headers.get("Set-Cookie") ?? [];
         if (typeof headers === "string") {
             headers = [
                 headers
@@ -10626,7 +10559,7 @@ class Cookies {
         if (!secure && options.secure) {
             throw new TypeError("Cannot send secure cookie over unencrypted connection.");
         }
-        const cookie = new Cookie(name, value9, options);
+        const cookie = new Cookie(name, value, options);
         cookie.secure = options.secure ?? secure;
         pushCookie(headers, cookie);
         if (signed) {
@@ -10638,27 +10571,27 @@ class Cookies {
             pushCookie(headers, cookie);
         }
         for (const header of headers){
-            response2.headers.append("Set-Cookie", header);
+            response.headers.append("Set-Cookie", header);
         }
         return this;
     }
     *values() {
         const keys = this.#requestKeys();
-        for (const key7 of keys){
-            const value10 = this.get(key7);
-            if (value10) {
-                yield value10;
+        for (const key of keys){
+            const value = this.get(key);
+            if (value) {
+                yield value;
             }
         }
     }
     *[Symbol.iterator]() {
         const keys = this.#requestKeys();
-        for (const key8 of keys){
-            const value11 = this.get(key8);
-            if (value11) {
+        for (const key of keys){
+            const value = this.get(key);
+            if (value) {
                 yield [
-                    key8,
-                    value11
+                    key,
+                    value
                 ];
             }
         }
@@ -10686,11 +10619,11 @@ class Sha1 {
     #hBytes;
     #finalized;
     #hashed;
-    #h0 = 1732584193;
-    #h1 = 4023233417;
-    #h2 = 2562383102;
-    #h3 = 271733878;
-    #h4 = 3285377520;
+    #h0 = 0x67452301;
+    #h1 = 0xefcdab89;
+    #h2 = 0x98badcfe;
+    #h3 = 0x10325476;
+    #h4 = 0xc3d2e1f0;
     #lastByteIndex = 0;
     constructor(sharedMemory = false){
         this.init(sharedMemory);
@@ -10720,11 +10653,11 @@ class Sha1 {
                 0
             ];
         }
-        this.#h0 = 1732584193;
-        this.#h1 = 4023233417;
-        this.#h2 = 2562383102;
-        this.#h3 = 271733878;
-        this.#h4 = 3285377520;
+        this.#h0 = 0x67452301;
+        this.#h1 = 0xefcdab89;
+        this.#h2 = 0x98badcfe;
+        this.#h3 = 0x10325476;
+        this.#h4 = 0xc3d2e1f0;
         this.#block = this.#start = this.#bytes = this.#hBytes = 0;
         this.#finalized = this.#hashed = false;
     }
@@ -10740,43 +10673,43 @@ class Sha1 {
         }
         let index = 0;
         const length = msg.length;
-        const blocks1 = this.#blocks;
+        const blocks = this.#blocks;
         while(index < length){
             let i;
             if (this.#hashed) {
                 this.#hashed = false;
-                blocks1[0] = this.#block;
-                blocks1[16] = blocks1[1] = blocks1[2] = blocks1[3] = blocks1[4] = blocks1[5] = blocks1[6] = blocks1[7] = blocks1[8] = blocks1[9] = blocks1[10] = blocks1[11] = blocks1[12] = blocks1[13] = blocks1[14] = blocks1[15] = 0;
+                blocks[0] = this.#block;
+                blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
             }
             if (typeof msg !== "string") {
                 for(i = this.#start; index < length && i < 64; ++index){
-                    blocks1[i >> 2] |= msg[index] << SHIFT[(i++) & 3];
+                    blocks[i >> 2] |= msg[index] << SHIFT[i++ & 3];
                 }
             } else {
                 for(i = this.#start; index < length && i < 64; ++index){
-                    let code16 = msg.charCodeAt(index);
-                    if (code16 < 128) {
-                        blocks1[i >> 2] |= code16 << SHIFT[(i++) & 3];
-                    } else if (code16 < 2048) {
-                        blocks1[i >> 2] |= (192 | code16 >> 6) << SHIFT[(i++) & 3];
-                        blocks1[i >> 2] |= (128 | code16 & 63) << SHIFT[(i++) & 3];
-                    } else if (code16 < 55296 || code16 >= 57344) {
-                        blocks1[i >> 2] |= (224 | code16 >> 12) << SHIFT[(i++) & 3];
-                        blocks1[i >> 2] |= (128 | code16 >> 6 & 63) << SHIFT[(i++) & 3];
-                        blocks1[i >> 2] |= (128 | code16 & 63) << SHIFT[(i++) & 3];
+                    let code = msg.charCodeAt(index);
+                    if (code < 0x80) {
+                        blocks[i >> 2] |= code << SHIFT[i++ & 3];
+                    } else if (code < 0x800) {
+                        blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+                    } else if (code < 0xd800 || code >= 0xe000) {
+                        blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
                     } else {
-                        code16 = 65536 + ((code16 & 1023) << 10 | msg.charCodeAt(++index) & 1023);
-                        blocks1[i >> 2] |= (240 | code16 >> 18) << SHIFT[(i++) & 3];
-                        blocks1[i >> 2] |= (128 | code16 >> 12 & 63) << SHIFT[(i++) & 3];
-                        blocks1[i >> 2] |= (128 | code16 >> 6 & 63) << SHIFT[(i++) & 3];
-                        blocks1[i >> 2] |= (128 | code16 & 63) << SHIFT[(i++) & 3];
+                        code = 0x10000 + ((code & 0x3ff) << 10 | msg.charCodeAt(++index) & 0x3ff);
+                        blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
                     }
                 }
             }
             this.#lastByteIndex = i;
             this.#bytes += i - this.#start;
             if (i >= 64) {
-                this.#block = blocks1[16];
+                this.#block = blocks[16];
                 this.#start = i - 64;
                 this.hash();
                 this.#hashed = true;
@@ -10795,20 +10728,20 @@ class Sha1 {
             return;
         }
         this.#finalized = true;
-        const blocks2 = this.#blocks;
+        const blocks = this.#blocks;
         const i = this.#lastByteIndex;
-        blocks2[16] = this.#block;
-        blocks2[i >> 2] |= EXTRA[i & 3];
-        this.#block = blocks2[16];
+        blocks[16] = this.#block;
+        blocks[i >> 2] |= EXTRA[i & 3];
+        this.#block = blocks[16];
         if (i >= 56) {
             if (!this.#hashed) {
                 this.hash();
             }
-            blocks2[0] = this.#block;
-            blocks2[16] = blocks2[1] = blocks2[2] = blocks2[3] = blocks2[4] = blocks2[5] = blocks2[6] = blocks2[7] = blocks2[8] = blocks2[9] = blocks2[10] = blocks2[11] = blocks2[12] = blocks2[13] = blocks2[14] = blocks2[15] = 0;
+            blocks[0] = this.#block;
+            blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
         }
-        blocks2[14] = this.#hBytes << 3 | this.#bytes >>> 29;
-        blocks2[15] = this.#bytes << 3;
+        blocks[14] = this.#hBytes << 3 | this.#bytes >>> 29;
+        blocks[15] = this.#bytes << 3;
         this.hash();
     }
     hash() {
@@ -10820,97 +10753,97 @@ class Sha1 {
         let f;
         let j;
         let t;
-        const blocks3 = this.#blocks;
+        const blocks = this.#blocks;
         for(j = 16; j < 80; ++j){
-            t = blocks3[j - 3] ^ blocks3[j - 8] ^ blocks3[j - 14] ^ blocks3[j - 16];
-            blocks3[j] = t << 1 | t >>> 31;
+            t = blocks[j - 3] ^ blocks[j - 8] ^ blocks[j - 14] ^ blocks[j - 16];
+            blocks[j] = t << 1 | t >>> 31;
         }
         for(j = 0; j < 20; j += 5){
             f = b & c | ~b & d;
             t = a << 5 | a >>> 27;
-            e = t + f + e + 1518500249 + blocks3[j] >>> 0;
+            e = t + f + e + 1518500249 + blocks[j] >>> 0;
             b = b << 30 | b >>> 2;
             f = a & b | ~a & c;
             t = e << 5 | e >>> 27;
-            d = t + f + d + 1518500249 + blocks3[j + 1] >>> 0;
+            d = t + f + d + 1518500249 + blocks[j + 1] >>> 0;
             a = a << 30 | a >>> 2;
             f = e & a | ~e & b;
             t = d << 5 | d >>> 27;
-            c = t + f + c + 1518500249 + blocks3[j + 2] >>> 0;
+            c = t + f + c + 1518500249 + blocks[j + 2] >>> 0;
             e = e << 30 | e >>> 2;
             f = d & e | ~d & a;
             t = c << 5 | c >>> 27;
-            b = t + f + b + 1518500249 + blocks3[j + 3] >>> 0;
+            b = t + f + b + 1518500249 + blocks[j + 3] >>> 0;
             d = d << 30 | d >>> 2;
             f = c & d | ~c & e;
             t = b << 5 | b >>> 27;
-            a = t + f + a + 1518500249 + blocks3[j + 4] >>> 0;
+            a = t + f + a + 1518500249 + blocks[j + 4] >>> 0;
             c = c << 30 | c >>> 2;
         }
         for(; j < 40; j += 5){
             f = b ^ c ^ d;
             t = a << 5 | a >>> 27;
-            e = t + f + e + 1859775393 + blocks3[j] >>> 0;
+            e = t + f + e + 1859775393 + blocks[j] >>> 0;
             b = b << 30 | b >>> 2;
             f = a ^ b ^ c;
             t = e << 5 | e >>> 27;
-            d = t + f + d + 1859775393 + blocks3[j + 1] >>> 0;
+            d = t + f + d + 1859775393 + blocks[j + 1] >>> 0;
             a = a << 30 | a >>> 2;
             f = e ^ a ^ b;
             t = d << 5 | d >>> 27;
-            c = t + f + c + 1859775393 + blocks3[j + 2] >>> 0;
+            c = t + f + c + 1859775393 + blocks[j + 2] >>> 0;
             e = e << 30 | e >>> 2;
             f = d ^ e ^ a;
             t = c << 5 | c >>> 27;
-            b = t + f + b + 1859775393 + blocks3[j + 3] >>> 0;
+            b = t + f + b + 1859775393 + blocks[j + 3] >>> 0;
             d = d << 30 | d >>> 2;
             f = c ^ d ^ e;
             t = b << 5 | b >>> 27;
-            a = t + f + a + 1859775393 + blocks3[j + 4] >>> 0;
+            a = t + f + a + 1859775393 + blocks[j + 4] >>> 0;
             c = c << 30 | c >>> 2;
         }
         for(; j < 60; j += 5){
             f = b & c | b & d | c & d;
             t = a << 5 | a >>> 27;
-            e = t + f + e - 1894007588 + blocks3[j] >>> 0;
+            e = t + f + e - 1894007588 + blocks[j] >>> 0;
             b = b << 30 | b >>> 2;
             f = a & b | a & c | b & c;
             t = e << 5 | e >>> 27;
-            d = t + f + d - 1894007588 + blocks3[j + 1] >>> 0;
+            d = t + f + d - 1894007588 + blocks[j + 1] >>> 0;
             a = a << 30 | a >>> 2;
             f = e & a | e & b | a & b;
             t = d << 5 | d >>> 27;
-            c = t + f + c - 1894007588 + blocks3[j + 2] >>> 0;
+            c = t + f + c - 1894007588 + blocks[j + 2] >>> 0;
             e = e << 30 | e >>> 2;
             f = d & e | d & a | e & a;
             t = c << 5 | c >>> 27;
-            b = t + f + b - 1894007588 + blocks3[j + 3] >>> 0;
+            b = t + f + b - 1894007588 + blocks[j + 3] >>> 0;
             d = d << 30 | d >>> 2;
             f = c & d | c & e | d & e;
             t = b << 5 | b >>> 27;
-            a = t + f + a - 1894007588 + blocks3[j + 4] >>> 0;
+            a = t + f + a - 1894007588 + blocks[j + 4] >>> 0;
             c = c << 30 | c >>> 2;
         }
         for(; j < 80; j += 5){
             f = b ^ c ^ d;
             t = a << 5 | a >>> 27;
-            e = t + f + e - 899497514 + blocks3[j] >>> 0;
+            e = t + f + e - 899497514 + blocks[j] >>> 0;
             b = b << 30 | b >>> 2;
             f = a ^ b ^ c;
             t = e << 5 | e >>> 27;
-            d = t + f + d - 899497514 + blocks3[j + 1] >>> 0;
+            d = t + f + d - 899497514 + blocks[j + 1] >>> 0;
             a = a << 30 | a >>> 2;
             f = e ^ a ^ b;
             t = d << 5 | d >>> 27;
-            c = t + f + c - 899497514 + blocks3[j + 2] >>> 0;
+            c = t + f + c - 899497514 + blocks[j + 2] >>> 0;
             e = e << 30 | e >>> 2;
             f = d ^ e ^ a;
             t = c << 5 | c >>> 27;
-            b = t + f + b - 899497514 + blocks3[j + 3] >>> 0;
+            b = t + f + b - 899497514 + blocks[j + 3] >>> 0;
             d = d << 30 | d >>> 2;
             f = c ^ d ^ e;
             t = b << 5 | b >>> 27;
-            a = t + f + a - 899497514 + blocks3[j + 4] >>> 0;
+            a = t + f + a - 899497514 + blocks[j + 4] >>> 0;
             c = c << 30 | c >>> 2;
         }
         this.#h0 = this.#h0 + a >>> 0;
@@ -10926,7 +10859,7 @@ class Sha1 {
         const h2 = this.#h2;
         const h3 = this.#h3;
         const h4 = this.#h4;
-        return HEX_CHARS[h0 >> 28 & 15] + HEX_CHARS[h0 >> 24 & 15] + HEX_CHARS[h0 >> 20 & 15] + HEX_CHARS[h0 >> 16 & 15] + HEX_CHARS[h0 >> 12 & 15] + HEX_CHARS[h0 >> 8 & 15] + HEX_CHARS[h0 >> 4 & 15] + HEX_CHARS[h0 & 15] + HEX_CHARS[h1 >> 28 & 15] + HEX_CHARS[h1 >> 24 & 15] + HEX_CHARS[h1 >> 20 & 15] + HEX_CHARS[h1 >> 16 & 15] + HEX_CHARS[h1 >> 12 & 15] + HEX_CHARS[h1 >> 8 & 15] + HEX_CHARS[h1 >> 4 & 15] + HEX_CHARS[h1 & 15] + HEX_CHARS[h2 >> 28 & 15] + HEX_CHARS[h2 >> 24 & 15] + HEX_CHARS[h2 >> 20 & 15] + HEX_CHARS[h2 >> 16 & 15] + HEX_CHARS[h2 >> 12 & 15] + HEX_CHARS[h2 >> 8 & 15] + HEX_CHARS[h2 >> 4 & 15] + HEX_CHARS[h2 & 15] + HEX_CHARS[h3 >> 28 & 15] + HEX_CHARS[h3 >> 24 & 15] + HEX_CHARS[h3 >> 20 & 15] + HEX_CHARS[h3 >> 16 & 15] + HEX_CHARS[h3 >> 12 & 15] + HEX_CHARS[h3 >> 8 & 15] + HEX_CHARS[h3 >> 4 & 15] + HEX_CHARS[h3 & 15] + HEX_CHARS[h4 >> 28 & 15] + HEX_CHARS[h4 >> 24 & 15] + HEX_CHARS[h4 >> 20 & 15] + HEX_CHARS[h4 >> 16 & 15] + HEX_CHARS[h4 >> 12 & 15] + HEX_CHARS[h4 >> 8 & 15] + HEX_CHARS[h4 >> 4 & 15] + HEX_CHARS[h4 & 15];
+        return HEX_CHARS[h0 >> 28 & 0x0f] + HEX_CHARS[h0 >> 24 & 0x0f] + HEX_CHARS[h0 >> 20 & 0x0f] + HEX_CHARS[h0 >> 16 & 0x0f] + HEX_CHARS[h0 >> 12 & 0x0f] + HEX_CHARS[h0 >> 8 & 0x0f] + HEX_CHARS[h0 >> 4 & 0x0f] + HEX_CHARS[h0 & 0x0f] + HEX_CHARS[h1 >> 28 & 0x0f] + HEX_CHARS[h1 >> 24 & 0x0f] + HEX_CHARS[h1 >> 20 & 0x0f] + HEX_CHARS[h1 >> 16 & 0x0f] + HEX_CHARS[h1 >> 12 & 0x0f] + HEX_CHARS[h1 >> 8 & 0x0f] + HEX_CHARS[h1 >> 4 & 0x0f] + HEX_CHARS[h1 & 0x0f] + HEX_CHARS[h2 >> 28 & 0x0f] + HEX_CHARS[h2 >> 24 & 0x0f] + HEX_CHARS[h2 >> 20 & 0x0f] + HEX_CHARS[h2 >> 16 & 0x0f] + HEX_CHARS[h2 >> 12 & 0x0f] + HEX_CHARS[h2 >> 8 & 0x0f] + HEX_CHARS[h2 >> 4 & 0x0f] + HEX_CHARS[h2 & 0x0f] + HEX_CHARS[h3 >> 28 & 0x0f] + HEX_CHARS[h3 >> 24 & 0x0f] + HEX_CHARS[h3 >> 20 & 0x0f] + HEX_CHARS[h3 >> 16 & 0x0f] + HEX_CHARS[h3 >> 12 & 0x0f] + HEX_CHARS[h3 >> 8 & 0x0f] + HEX_CHARS[h3 >> 4 & 0x0f] + HEX_CHARS[h3 & 0x0f] + HEX_CHARS[h4 >> 28 & 0x0f] + HEX_CHARS[h4 >> 24 & 0x0f] + HEX_CHARS[h4 >> 20 & 0x0f] + HEX_CHARS[h4 >> 16 & 0x0f] + HEX_CHARS[h4 >> 12 & 0x0f] + HEX_CHARS[h4 >> 8 & 0x0f] + HEX_CHARS[h4 >> 4 & 0x0f] + HEX_CHARS[h4 & 0x0f];
     }
     toString() {
         return this.hex();
@@ -10939,26 +10872,26 @@ class Sha1 {
         const h3 = this.#h3;
         const h4 = this.#h4;
         return [
-            h0 >> 24 & 255,
-            h0 >> 16 & 255,
-            h0 >> 8 & 255,
-            h0 & 255,
-            h1 >> 24 & 255,
-            h1 >> 16 & 255,
-            h1 >> 8 & 255,
-            h1 & 255,
-            h2 >> 24 & 255,
-            h2 >> 16 & 255,
-            h2 >> 8 & 255,
-            h2 & 255,
-            h3 >> 24 & 255,
-            h3 >> 16 & 255,
-            h3 >> 8 & 255,
-            h3 & 255,
-            h4 >> 24 & 255,
-            h4 >> 16 & 255,
-            h4 >> 8 & 255,
-            h4 & 255, 
+            h0 >> 24 & 0xff,
+            h0 >> 16 & 0xff,
+            h0 >> 8 & 0xff,
+            h0 & 0xff,
+            h1 >> 24 & 0xff,
+            h1 >> 16 & 0xff,
+            h1 >> 8 & 0xff,
+            h1 & 0xff,
+            h2 >> 24 & 0xff,
+            h2 >> 16 & 0xff,
+            h2 >> 8 & 0xff,
+            h2 & 0xff,
+            h3 >> 24 & 0xff,
+            h3 >> 16 & 0xff,
+            h3 >> 8 & 0xff,
+            h3 & 0xff,
+            h4 >> 24 & 0xff,
+            h4 >> 16 & 0xff,
+            h4 >> 8 & 0xff,
+            h4 & 0xff
         ];
     }
     array() {
@@ -10990,70 +10923,70 @@ const SHIFT1 = [
     0
 ];
 const K = [
-    1116352408,
-    1899447441,
-    3049323471,
-    3921009573,
-    961987163,
-    1508970993,
-    2453635748,
-    2870763221,
-    3624381080,
-    310598401,
-    607225278,
-    1426881987,
-    1925078388,
-    2162078206,
-    2614888103,
-    3248222580,
-    3835390401,
-    4022224774,
-    264347078,
-    604807628,
-    770255983,
-    1249150122,
-    1555081692,
-    1996064986,
-    2554220882,
-    2821834349,
-    2952996808,
-    3210313671,
-    3336571891,
-    3584528711,
-    113926993,
-    338241895,
-    666307205,
-    773529912,
-    1294757372,
-    1396182291,
-    1695183700,
-    1986661051,
-    2177026350,
-    2456956037,
-    2730485921,
-    2820302411,
-    3259730800,
-    3345764771,
-    3516065817,
-    3600352804,
-    4094571909,
-    275423344,
-    430227734,
-    506948616,
-    659060556,
-    883997877,
-    958139571,
-    1322822218,
-    1537002063,
-    1747873779,
-    1955562222,
-    2024104815,
-    2227730452,
-    2361852424,
-    2428436474,
-    2756734187,
-    3204031479,
-    3329325298, 
+    0x428a2f98,
+    0x71374491,
+    0xb5c0fbcf,
+    0xe9b5dba5,
+    0x3956c25b,
+    0x59f111f1,
+    0x923f82a4,
+    0xab1c5ed5,
+    0xd807aa98,
+    0x12835b01,
+    0x243185be,
+    0x550c7dc3,
+    0x72be5d74,
+    0x80deb1fe,
+    0x9bdc06a7,
+    0xc19bf174,
+    0xe49b69c1,
+    0xefbe4786,
+    0x0fc19dc6,
+    0x240ca1cc,
+    0x2de92c6f,
+    0x4a7484aa,
+    0x5cb0a9dc,
+    0x76f988da,
+    0x983e5152,
+    0xa831c66d,
+    0xb00327c8,
+    0xbf597fc7,
+    0xc6e00bf3,
+    0xd5a79147,
+    0x06ca6351,
+    0x14292967,
+    0x27b70a85,
+    0x2e1b2138,
+    0x4d2c6dfc,
+    0x53380d13,
+    0x650a7354,
+    0x766a0abb,
+    0x81c2c92e,
+    0x92722c85,
+    0xa2bfe8a1,
+    0xa81a664b,
+    0xc24b8b70,
+    0xc76c51a3,
+    0xd192e819,
+    0xd6990624,
+    0xf40e3585,
+    0x106aa070,
+    0x19a4c116,
+    0x1e376c08,
+    0x2748774c,
+    0x34b0bcb5,
+    0x391c0cb3,
+    0x4ed8aa4a,
+    0x5b9cca4f,
+    0x682e6ff3,
+    0x748f82ee,
+    0x78a5636f,
+    0x84c87814,
+    0x8cc70208,
+    0x90befffa,
+    0xa4506ceb,
+    0xbef9a3f7,
+    0xc67178f2
 ];
 const blocks1 = [];
 class Sha256 {
@@ -11104,23 +11037,23 @@ class Sha256 {
             ];
         }
         if (is224) {
-            this.#h0 = 3238371032;
-            this.#h1 = 914150663;
-            this.#h2 = 812702999;
-            this.#h3 = 4144912697;
-            this.#h4 = 4290775857;
-            this.#h5 = 1750603025;
-            this.#h6 = 1694076839;
-            this.#h7 = 3204075428;
+            this.#h0 = 0xc1059ed8;
+            this.#h1 = 0x367cd507;
+            this.#h2 = 0x3070dd17;
+            this.#h3 = 0xf70e5939;
+            this.#h4 = 0xffc00b31;
+            this.#h5 = 0x68581511;
+            this.#h6 = 0x64f98fa7;
+            this.#h7 = 0xbefa4fa4;
         } else {
-            this.#h0 = 1779033703;
-            this.#h1 = 3144134277;
-            this.#h2 = 1013904242;
-            this.#h3 = 2773480762;
-            this.#h4 = 1359893119;
-            this.#h5 = 2600822924;
-            this.#h6 = 528734635;
-            this.#h7 = 1541459225;
+            this.#h0 = 0x6a09e667;
+            this.#h1 = 0xbb67ae85;
+            this.#h2 = 0x3c6ef372;
+            this.#h3 = 0xa54ff53a;
+            this.#h4 = 0x510e527f;
+            this.#h5 = 0x9b05688c;
+            this.#h6 = 0x1f83d9ab;
+            this.#h7 = 0x5be0cd19;
         }
         this.#block = this.#start = this.#bytes = this.#hBytes = 0;
         this.#finalized = this.#hashed = false;
@@ -11139,43 +11072,43 @@ class Sha256 {
         }
         let index = 0;
         const length = msg.length;
-        const blocks11 = this.#blocks;
+        const blocks = this.#blocks;
         while(index < length){
             let i;
             if (this.#hashed) {
                 this.#hashed = false;
-                blocks11[0] = this.#block;
-                blocks11[16] = blocks11[1] = blocks11[2] = blocks11[3] = blocks11[4] = blocks11[5] = blocks11[6] = blocks11[7] = blocks11[8] = blocks11[9] = blocks11[10] = blocks11[11] = blocks11[12] = blocks11[13] = blocks11[14] = blocks11[15] = 0;
+                blocks[0] = this.#block;
+                blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
             }
             if (typeof msg !== "string") {
                 for(i = this.#start; index < length && i < 64; ++index){
-                    blocks11[i >> 2] |= msg[index] << SHIFT1[(i++) & 3];
+                    blocks[i >> 2] |= msg[index] << SHIFT1[i++ & 3];
                 }
             } else {
                 for(i = this.#start; index < length && i < 64; ++index){
-                    let code17 = msg.charCodeAt(index);
-                    if (code17 < 128) {
-                        blocks11[i >> 2] |= code17 << SHIFT1[(i++) & 3];
-                    } else if (code17 < 2048) {
-                        blocks11[i >> 2] |= (192 | code17 >> 6) << SHIFT1[(i++) & 3];
-                        blocks11[i >> 2] |= (128 | code17 & 63) << SHIFT1[(i++) & 3];
-                    } else if (code17 < 55296 || code17 >= 57344) {
-                        blocks11[i >> 2] |= (224 | code17 >> 12) << SHIFT1[(i++) & 3];
-                        blocks11[i >> 2] |= (128 | code17 >> 6 & 63) << SHIFT1[(i++) & 3];
-                        blocks11[i >> 2] |= (128 | code17 & 63) << SHIFT1[(i++) & 3];
+                    let code = msg.charCodeAt(index);
+                    if (code < 0x80) {
+                        blocks[i >> 2] |= code << SHIFT1[i++ & 3];
+                    } else if (code < 0x800) {
+                        blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT1[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT1[i++ & 3];
+                    } else if (code < 0xd800 || code >= 0xe000) {
+                        blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT1[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT1[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT1[i++ & 3];
                     } else {
-                        code17 = 65536 + ((code17 & 1023) << 10 | msg.charCodeAt(++index) & 1023);
-                        blocks11[i >> 2] |= (240 | code17 >> 18) << SHIFT1[(i++) & 3];
-                        blocks11[i >> 2] |= (128 | code17 >> 12 & 63) << SHIFT1[(i++) & 3];
-                        blocks11[i >> 2] |= (128 | code17 >> 6 & 63) << SHIFT1[(i++) & 3];
-                        blocks11[i >> 2] |= (128 | code17 & 63) << SHIFT1[(i++) & 3];
+                        code = 0x10000 + ((code & 0x3ff) << 10 | msg.charCodeAt(++index) & 0x3ff);
+                        blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT1[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT1[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT1[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT1[i++ & 3];
                     }
                 }
             }
             this.#lastByteIndex = i;
             this.#bytes += i - this.#start;
             if (i >= 64) {
-                this.#block = blocks11[16];
+                this.#block = blocks[16];
                 this.#start = i - 64;
                 this.hash();
                 this.#hashed = true;
@@ -11194,20 +11127,20 @@ class Sha256 {
             return;
         }
         this.#finalized = true;
-        const blocks2 = this.#blocks;
+        const blocks = this.#blocks;
         const i = this.#lastByteIndex;
-        blocks2[16] = this.#block;
-        blocks2[i >> 2] |= EXTRA1[i & 3];
-        this.#block = blocks2[16];
+        blocks[16] = this.#block;
+        blocks[i >> 2] |= EXTRA1[i & 3];
+        this.#block = blocks[16];
         if (i >= 56) {
             if (!this.#hashed) {
                 this.hash();
             }
-            blocks2[0] = this.#block;
-            blocks2[16] = blocks2[1] = blocks2[2] = blocks2[3] = blocks2[4] = blocks2[5] = blocks2[6] = blocks2[7] = blocks2[8] = blocks2[9] = blocks2[10] = blocks2[11] = blocks2[12] = blocks2[13] = blocks2[14] = blocks2[15] = 0;
+            blocks[0] = this.#block;
+            blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
         }
-        blocks2[14] = this.#hBytes << 3 | this.#bytes >>> 29;
-        blocks2[15] = this.#bytes << 3;
+        blocks[14] = this.#hBytes << 3 | this.#bytes >>> 29;
+        blocks[15] = this.#bytes << 3;
         this.hash();
     }
     hash() {
@@ -11219,7 +11152,7 @@ class Sha256 {
         let f = this.#h5;
         let g = this.#h6;
         let h = this.#h7;
-        const blocks3 = this.#blocks;
+        const blocks = this.#blocks;
         let s0;
         let s1;
         let maj;
@@ -11231,23 +11164,23 @@ class Sha256 {
         let cd;
         let bc;
         for(let j = 16; j < 64; ++j){
-            t1 = blocks3[j - 15];
+            t1 = blocks[j - 15];
             s0 = (t1 >>> 7 | t1 << 25) ^ (t1 >>> 18 | t1 << 14) ^ t1 >>> 3;
-            t1 = blocks3[j - 2];
+            t1 = blocks[j - 2];
             s1 = (t1 >>> 17 | t1 << 15) ^ (t1 >>> 19 | t1 << 13) ^ t1 >>> 10;
-            blocks3[j] = blocks3[j - 16] + s0 + blocks3[j - 7] + s1 << 0;
+            blocks[j] = blocks[j - 16] + s0 + blocks[j - 7] + s1 << 0;
         }
         bc = b & c;
         for(let j1 = 0; j1 < 64; j1 += 4){
             if (this.#first) {
                 if (this.#is224) {
                     ab = 300032;
-                    t1 = blocks3[0] - 1413257819;
+                    t1 = blocks[0] - 1413257819;
                     h = t1 - 150054599 << 0;
                     d = t1 + 24177077 << 0;
                 } else {
                     ab = 704751109;
-                    t1 = blocks3[0] - 210244248;
+                    t1 = blocks[0] - 210244248;
                     h = t1 - 1521486534 << 0;
                     d = t1 + 143694565 << 0;
                 }
@@ -11258,7 +11191,7 @@ class Sha256 {
                 ab = a & b;
                 maj = ab ^ a & c ^ bc;
                 ch = e & f ^ ~e & g;
-                t1 = h + s1 + ch + K[j1] + blocks3[j1];
+                t1 = h + s1 + ch + K[j1] + blocks[j1];
                 t2 = s0 + maj;
                 h = d + t1 << 0;
                 d = t1 + t2 << 0;
@@ -11268,7 +11201,7 @@ class Sha256 {
             da = d & a;
             maj = da ^ d & b ^ ab;
             ch = h & e ^ ~h & f;
-            t1 = g + s1 + ch + K[j1 + 1] + blocks3[j1 + 1];
+            t1 = g + s1 + ch + K[j1 + 1] + blocks[j1 + 1];
             t2 = s0 + maj;
             g = c + t1 << 0;
             c = t1 + t2 << 0;
@@ -11277,7 +11210,7 @@ class Sha256 {
             cd = c & d;
             maj = cd ^ c & a ^ da;
             ch = g & h ^ ~g & e;
-            t1 = f + s1 + ch + K[j1 + 2] + blocks3[j1 + 2];
+            t1 = f + s1 + ch + K[j1 + 2] + blocks[j1 + 2];
             t2 = s0 + maj;
             f = b + t1 << 0;
             b = t1 + t2 << 0;
@@ -11286,7 +11219,7 @@ class Sha256 {
             bc = b & c;
             maj = bc ^ b & d ^ cd;
             ch = f & g ^ ~f & h;
-            t1 = e + s1 + ch + K[j1 + 3] + blocks3[j1 + 3];
+            t1 = e + s1 + ch + K[j1 + 3] + blocks[j1 + 3];
             t2 = s0 + maj;
             e = a + t1 << 0;
             a = t1 + t2 << 0;
@@ -11310,9 +11243,9 @@ class Sha256 {
         const h5 = this.#h5;
         const h6 = this.#h6;
         const h7 = this.#h7;
-        let hex = HEX_CHARS1[h0 >> 28 & 15] + HEX_CHARS1[h0 >> 24 & 15] + HEX_CHARS1[h0 >> 20 & 15] + HEX_CHARS1[h0 >> 16 & 15] + HEX_CHARS1[h0 >> 12 & 15] + HEX_CHARS1[h0 >> 8 & 15] + HEX_CHARS1[h0 >> 4 & 15] + HEX_CHARS1[h0 & 15] + HEX_CHARS1[h1 >> 28 & 15] + HEX_CHARS1[h1 >> 24 & 15] + HEX_CHARS1[h1 >> 20 & 15] + HEX_CHARS1[h1 >> 16 & 15] + HEX_CHARS1[h1 >> 12 & 15] + HEX_CHARS1[h1 >> 8 & 15] + HEX_CHARS1[h1 >> 4 & 15] + HEX_CHARS1[h1 & 15] + HEX_CHARS1[h2 >> 28 & 15] + HEX_CHARS1[h2 >> 24 & 15] + HEX_CHARS1[h2 >> 20 & 15] + HEX_CHARS1[h2 >> 16 & 15] + HEX_CHARS1[h2 >> 12 & 15] + HEX_CHARS1[h2 >> 8 & 15] + HEX_CHARS1[h2 >> 4 & 15] + HEX_CHARS1[h2 & 15] + HEX_CHARS1[h3 >> 28 & 15] + HEX_CHARS1[h3 >> 24 & 15] + HEX_CHARS1[h3 >> 20 & 15] + HEX_CHARS1[h3 >> 16 & 15] + HEX_CHARS1[h3 >> 12 & 15] + HEX_CHARS1[h3 >> 8 & 15] + HEX_CHARS1[h3 >> 4 & 15] + HEX_CHARS1[h3 & 15] + HEX_CHARS1[h4 >> 28 & 15] + HEX_CHARS1[h4 >> 24 & 15] + HEX_CHARS1[h4 >> 20 & 15] + HEX_CHARS1[h4 >> 16 & 15] + HEX_CHARS1[h4 >> 12 & 15] + HEX_CHARS1[h4 >> 8 & 15] + HEX_CHARS1[h4 >> 4 & 15] + HEX_CHARS1[h4 & 15] + HEX_CHARS1[h5 >> 28 & 15] + HEX_CHARS1[h5 >> 24 & 15] + HEX_CHARS1[h5 >> 20 & 15] + HEX_CHARS1[h5 >> 16 & 15] + HEX_CHARS1[h5 >> 12 & 15] + HEX_CHARS1[h5 >> 8 & 15] + HEX_CHARS1[h5 >> 4 & 15] + HEX_CHARS1[h5 & 15] + HEX_CHARS1[h6 >> 28 & 15] + HEX_CHARS1[h6 >> 24 & 15] + HEX_CHARS1[h6 >> 20 & 15] + HEX_CHARS1[h6 >> 16 & 15] + HEX_CHARS1[h6 >> 12 & 15] + HEX_CHARS1[h6 >> 8 & 15] + HEX_CHARS1[h6 >> 4 & 15] + HEX_CHARS1[h6 & 15];
+        let hex = HEX_CHARS1[h0 >> 28 & 0x0f] + HEX_CHARS1[h0 >> 24 & 0x0f] + HEX_CHARS1[h0 >> 20 & 0x0f] + HEX_CHARS1[h0 >> 16 & 0x0f] + HEX_CHARS1[h0 >> 12 & 0x0f] + HEX_CHARS1[h0 >> 8 & 0x0f] + HEX_CHARS1[h0 >> 4 & 0x0f] + HEX_CHARS1[h0 & 0x0f] + HEX_CHARS1[h1 >> 28 & 0x0f] + HEX_CHARS1[h1 >> 24 & 0x0f] + HEX_CHARS1[h1 >> 20 & 0x0f] + HEX_CHARS1[h1 >> 16 & 0x0f] + HEX_CHARS1[h1 >> 12 & 0x0f] + HEX_CHARS1[h1 >> 8 & 0x0f] + HEX_CHARS1[h1 >> 4 & 0x0f] + HEX_CHARS1[h1 & 0x0f] + HEX_CHARS1[h2 >> 28 & 0x0f] + HEX_CHARS1[h2 >> 24 & 0x0f] + HEX_CHARS1[h2 >> 20 & 0x0f] + HEX_CHARS1[h2 >> 16 & 0x0f] + HEX_CHARS1[h2 >> 12 & 0x0f] + HEX_CHARS1[h2 >> 8 & 0x0f] + HEX_CHARS1[h2 >> 4 & 0x0f] + HEX_CHARS1[h2 & 0x0f] + HEX_CHARS1[h3 >> 28 & 0x0f] + HEX_CHARS1[h3 >> 24 & 0x0f] + HEX_CHARS1[h3 >> 20 & 0x0f] + HEX_CHARS1[h3 >> 16 & 0x0f] + HEX_CHARS1[h3 >> 12 & 0x0f] + HEX_CHARS1[h3 >> 8 & 0x0f] + HEX_CHARS1[h3 >> 4 & 0x0f] + HEX_CHARS1[h3 & 0x0f] + HEX_CHARS1[h4 >> 28 & 0x0f] + HEX_CHARS1[h4 >> 24 & 0x0f] + HEX_CHARS1[h4 >> 20 & 0x0f] + HEX_CHARS1[h4 >> 16 & 0x0f] + HEX_CHARS1[h4 >> 12 & 0x0f] + HEX_CHARS1[h4 >> 8 & 0x0f] + HEX_CHARS1[h4 >> 4 & 0x0f] + HEX_CHARS1[h4 & 0x0f] + HEX_CHARS1[h5 >> 28 & 0x0f] + HEX_CHARS1[h5 >> 24 & 0x0f] + HEX_CHARS1[h5 >> 20 & 0x0f] + HEX_CHARS1[h5 >> 16 & 0x0f] + HEX_CHARS1[h5 >> 12 & 0x0f] + HEX_CHARS1[h5 >> 8 & 0x0f] + HEX_CHARS1[h5 >> 4 & 0x0f] + HEX_CHARS1[h5 & 0x0f] + HEX_CHARS1[h6 >> 28 & 0x0f] + HEX_CHARS1[h6 >> 24 & 0x0f] + HEX_CHARS1[h6 >> 20 & 0x0f] + HEX_CHARS1[h6 >> 16 & 0x0f] + HEX_CHARS1[h6 >> 12 & 0x0f] + HEX_CHARS1[h6 >> 8 & 0x0f] + HEX_CHARS1[h6 >> 4 & 0x0f] + HEX_CHARS1[h6 & 0x0f];
         if (!this.#is224) {
-            hex += HEX_CHARS1[h7 >> 28 & 15] + HEX_CHARS1[h7 >> 24 & 15] + HEX_CHARS1[h7 >> 20 & 15] + HEX_CHARS1[h7 >> 16 & 15] + HEX_CHARS1[h7 >> 12 & 15] + HEX_CHARS1[h7 >> 8 & 15] + HEX_CHARS1[h7 >> 4 & 15] + HEX_CHARS1[h7 & 15];
+            hex += HEX_CHARS1[h7 >> 28 & 0x0f] + HEX_CHARS1[h7 >> 24 & 0x0f] + HEX_CHARS1[h7 >> 20 & 0x0f] + HEX_CHARS1[h7 >> 16 & 0x0f] + HEX_CHARS1[h7 >> 12 & 0x0f] + HEX_CHARS1[h7 >> 8 & 0x0f] + HEX_CHARS1[h7 >> 4 & 0x0f] + HEX_CHARS1[h7 & 0x0f];
         }
         return hex;
     }
@@ -11330,37 +11263,37 @@ class Sha256 {
         const h6 = this.#h6;
         const h7 = this.#h7;
         const arr = [
-            h0 >> 24 & 255,
-            h0 >> 16 & 255,
-            h0 >> 8 & 255,
-            h0 & 255,
-            h1 >> 24 & 255,
-            h1 >> 16 & 255,
-            h1 >> 8 & 255,
-            h1 & 255,
-            h2 >> 24 & 255,
-            h2 >> 16 & 255,
-            h2 >> 8 & 255,
-            h2 & 255,
-            h3 >> 24 & 255,
-            h3 >> 16 & 255,
-            h3 >> 8 & 255,
-            h3 & 255,
-            h4 >> 24 & 255,
-            h4 >> 16 & 255,
-            h4 >> 8 & 255,
-            h4 & 255,
-            h5 >> 24 & 255,
-            h5 >> 16 & 255,
-            h5 >> 8 & 255,
-            h5 & 255,
-            h6 >> 24 & 255,
-            h6 >> 16 & 255,
-            h6 >> 8 & 255,
-            h6 & 255, 
+            h0 >> 24 & 0xff,
+            h0 >> 16 & 0xff,
+            h0 >> 8 & 0xff,
+            h0 & 0xff,
+            h1 >> 24 & 0xff,
+            h1 >> 16 & 0xff,
+            h1 >> 8 & 0xff,
+            h1 & 0xff,
+            h2 >> 24 & 0xff,
+            h2 >> 16 & 0xff,
+            h2 >> 8 & 0xff,
+            h2 & 0xff,
+            h3 >> 24 & 0xff,
+            h3 >> 16 & 0xff,
+            h3 >> 8 & 0xff,
+            h3 & 0xff,
+            h4 >> 24 & 0xff,
+            h4 >> 16 & 0xff,
+            h4 >> 8 & 0xff,
+            h4 & 0xff,
+            h5 >> 24 & 0xff,
+            h5 >> 16 & 0xff,
+            h5 >> 8 & 0xff,
+            h5 & 0xff,
+            h6 >> 24 & 0xff,
+            h6 >> 16 & 0xff,
+            h6 >> 8 & 0xff,
+            h6 & 0xff
         ];
         if (!this.#is224) {
-            arr.push(h7 >> 24 & 255, h7 >> 16 & 255, h7 >> 8 & 255, h7 & 255);
+            arr.push(h7 >> 24 & 0xff, h7 >> 16 & 0xff, h7 >> 8 & 0xff, h7 & 0xff);
         }
         return arr;
     }
@@ -11391,47 +11324,47 @@ class HmacSha256 extends Sha256 {
     #sharedMemory;
     constructor(secretKey, is224 = false, sharedMemory = false){
         super(is224, sharedMemory);
-        let key9;
+        let key;
         if (typeof secretKey === "string") {
             const bytes = [];
             const length = secretKey.length;
             let index = 0;
             for(let i = 0; i < length; ++i){
-                let code18 = secretKey.charCodeAt(i);
-                if (code18 < 128) {
-                    bytes[index++] = code18;
-                } else if (code18 < 2048) {
-                    bytes[index++] = 192 | code18 >> 6;
-                    bytes[index++] = 128 | code18 & 63;
-                } else if (code18 < 55296 || code18 >= 57344) {
-                    bytes[index++] = 224 | code18 >> 12;
-                    bytes[index++] = 128 | code18 >> 6 & 63;
-                    bytes[index++] = 128 | code18 & 63;
+                let code = secretKey.charCodeAt(i);
+                if (code < 0x80) {
+                    bytes[index++] = code;
+                } else if (code < 0x800) {
+                    bytes[index++] = 0xc0 | code >> 6;
+                    bytes[index++] = 0x80 | code & 0x3f;
+                } else if (code < 0xd800 || code >= 0xe000) {
+                    bytes[index++] = 0xe0 | code >> 12;
+                    bytes[index++] = 0x80 | code >> 6 & 0x3f;
+                    bytes[index++] = 0x80 | code & 0x3f;
                 } else {
-                    code18 = 65536 + ((code18 & 1023) << 10 | secretKey.charCodeAt(++i) & 1023);
-                    bytes[index++] = 240 | code18 >> 18;
-                    bytes[index++] = 128 | code18 >> 12 & 63;
-                    bytes[index++] = 128 | code18 >> 6 & 63;
-                    bytes[index++] = 128 | code18 & 63;
+                    code = 0x10000 + ((code & 0x3ff) << 10 | secretKey.charCodeAt(++i) & 0x3ff);
+                    bytes[index++] = 0xf0 | code >> 18;
+                    bytes[index++] = 0x80 | code >> 12 & 0x3f;
+                    bytes[index++] = 0x80 | code >> 6 & 0x3f;
+                    bytes[index++] = 0x80 | code & 0x3f;
                 }
             }
-            key9 = bytes;
+            key = bytes;
         } else {
             if (secretKey instanceof ArrayBuffer) {
-                key9 = new Uint8Array(secretKey);
+                key = new Uint8Array(secretKey);
             } else {
-                key9 = secretKey;
+                key = secretKey;
             }
         }
-        if (key9.length > 64) {
-            key9 = new Sha256(is224, true).update(key9).array();
+        if (key.length > 64) {
+            key = new Sha256(is224, true).update(key).array();
         }
         const oKeyPad = [];
         const iKeyPad = [];
-        for(let i = 0; i < 64; ++i){
-            const b = key9[i] || 0;
-            oKeyPad[i] = 92 ^ b;
-            iKeyPad[i] = 54 ^ b;
+        for(let i1 = 0; i1 < 64; ++i1){
+            const b = key[i1] || 0;
+            oKeyPad[i1] = 0x5c ^ b;
+            iKeyPad[i1] = 0x36 ^ b;
         }
         this.update(iKeyPad);
         this.#oKeyPad = oKeyPad;
@@ -11502,17 +11435,17 @@ class TextProtoReader {
             if (i < 0) {
                 throw new Deno.errors.InvalidData(`malformed MIME header line: ${str(kv)}`);
             }
-            const key10 = str(kv.subarray(0, i));
-            if (key10 == "") {
+            const key = str(kv.subarray(0, i));
+            if (key == "") {
                 continue;
             }
             i++;
             while(i < kv.byteLength && (kv[i] == charCode(" ") || kv[i] == charCode("\t"))){
                 i++;
             }
-            const value12 = str(kv.subarray(i)).replace(invalidHeaderCharRegex, encodeURI);
+            const value = str(kv.subarray(i)).replace(invalidHeaderCharRegex, encodeURI);
             try {
-                m.append(key10, value12);
+                m.append(key, value);
             } catch  {}
         }
     }
@@ -11548,69 +11481,69 @@ class TextProtoReader {
     r;
 }
 var Status;
-(function(Status2) {
-    Status2[Status2["Continue"] = 100] = "Continue";
-    Status2[Status2["SwitchingProtocols"] = 101] = "SwitchingProtocols";
-    Status2[Status2["Processing"] = 102] = "Processing";
-    Status2[Status2["EarlyHints"] = 103] = "EarlyHints";
-    Status2[Status2["OK"] = 200] = "OK";
-    Status2[Status2["Created"] = 201] = "Created";
-    Status2[Status2["Accepted"] = 202] = "Accepted";
-    Status2[Status2["NonAuthoritativeInfo"] = 203] = "NonAuthoritativeInfo";
-    Status2[Status2["NoContent"] = 204] = "NoContent";
-    Status2[Status2["ResetContent"] = 205] = "ResetContent";
-    Status2[Status2["PartialContent"] = 206] = "PartialContent";
-    Status2[Status2["MultiStatus"] = 207] = "MultiStatus";
-    Status2[Status2["AlreadyReported"] = 208] = "AlreadyReported";
-    Status2[Status2["IMUsed"] = 226] = "IMUsed";
-    Status2[Status2["MultipleChoices"] = 300] = "MultipleChoices";
-    Status2[Status2["MovedPermanently"] = 301] = "MovedPermanently";
-    Status2[Status2["Found"] = 302] = "Found";
-    Status2[Status2["SeeOther"] = 303] = "SeeOther";
-    Status2[Status2["NotModified"] = 304] = "NotModified";
-    Status2[Status2["UseProxy"] = 305] = "UseProxy";
-    Status2[Status2["TemporaryRedirect"] = 307] = "TemporaryRedirect";
-    Status2[Status2["PermanentRedirect"] = 308] = "PermanentRedirect";
-    Status2[Status2["BadRequest"] = 400] = "BadRequest";
-    Status2[Status2["Unauthorized"] = 401] = "Unauthorized";
-    Status2[Status2["PaymentRequired"] = 402] = "PaymentRequired";
-    Status2[Status2["Forbidden"] = 403] = "Forbidden";
-    Status2[Status2["NotFound"] = 404] = "NotFound";
-    Status2[Status2["MethodNotAllowed"] = 405] = "MethodNotAllowed";
-    Status2[Status2["NotAcceptable"] = 406] = "NotAcceptable";
-    Status2[Status2["ProxyAuthRequired"] = 407] = "ProxyAuthRequired";
-    Status2[Status2["RequestTimeout"] = 408] = "RequestTimeout";
-    Status2[Status2["Conflict"] = 409] = "Conflict";
-    Status2[Status2["Gone"] = 410] = "Gone";
-    Status2[Status2["LengthRequired"] = 411] = "LengthRequired";
-    Status2[Status2["PreconditionFailed"] = 412] = "PreconditionFailed";
-    Status2[Status2["RequestEntityTooLarge"] = 413] = "RequestEntityTooLarge";
-    Status2[Status2["RequestURITooLong"] = 414] = "RequestURITooLong";
-    Status2[Status2["UnsupportedMediaType"] = 415] = "UnsupportedMediaType";
-    Status2[Status2["RequestedRangeNotSatisfiable"] = 416] = "RequestedRangeNotSatisfiable";
-    Status2[Status2["ExpectationFailed"] = 417] = "ExpectationFailed";
-    Status2[Status2["Teapot"] = 418] = "Teapot";
-    Status2[Status2["MisdirectedRequest"] = 421] = "MisdirectedRequest";
-    Status2[Status2["UnprocessableEntity"] = 422] = "UnprocessableEntity";
-    Status2[Status2["Locked"] = 423] = "Locked";
-    Status2[Status2["FailedDependency"] = 424] = "FailedDependency";
-    Status2[Status2["TooEarly"] = 425] = "TooEarly";
-    Status2[Status2["UpgradeRequired"] = 426] = "UpgradeRequired";
-    Status2[Status2["PreconditionRequired"] = 428] = "PreconditionRequired";
-    Status2[Status2["TooManyRequests"] = 429] = "TooManyRequests";
-    Status2[Status2["RequestHeaderFieldsTooLarge"] = 431] = "RequestHeaderFieldsTooLarge";
-    Status2[Status2["UnavailableForLegalReasons"] = 451] = "UnavailableForLegalReasons";
-    Status2[Status2["InternalServerError"] = 500] = "InternalServerError";
-    Status2[Status2["NotImplemented"] = 501] = "NotImplemented";
-    Status2[Status2["BadGateway"] = 502] = "BadGateway";
-    Status2[Status2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
-    Status2[Status2["GatewayTimeout"] = 504] = "GatewayTimeout";
-    Status2[Status2["HTTPVersionNotSupported"] = 505] = "HTTPVersionNotSupported";
-    Status2[Status2["VariantAlsoNegotiates"] = 506] = "VariantAlsoNegotiates";
-    Status2[Status2["InsufficientStorage"] = 507] = "InsufficientStorage";
-    Status2[Status2["LoopDetected"] = 508] = "LoopDetected";
-    Status2[Status2["NotExtended"] = 510] = "NotExtended";
-    Status2[Status2["NetworkAuthenticationRequired"] = 511] = "NetworkAuthenticationRequired";
+(function(Status) {
+    Status[Status["Continue"] = 100] = "Continue";
+    Status[Status["SwitchingProtocols"] = 101] = "SwitchingProtocols";
+    Status[Status["Processing"] = 102] = "Processing";
+    Status[Status["EarlyHints"] = 103] = "EarlyHints";
+    Status[Status["OK"] = 200] = "OK";
+    Status[Status["Created"] = 201] = "Created";
+    Status[Status["Accepted"] = 202] = "Accepted";
+    Status[Status["NonAuthoritativeInfo"] = 203] = "NonAuthoritativeInfo";
+    Status[Status["NoContent"] = 204] = "NoContent";
+    Status[Status["ResetContent"] = 205] = "ResetContent";
+    Status[Status["PartialContent"] = 206] = "PartialContent";
+    Status[Status["MultiStatus"] = 207] = "MultiStatus";
+    Status[Status["AlreadyReported"] = 208] = "AlreadyReported";
+    Status[Status["IMUsed"] = 226] = "IMUsed";
+    Status[Status["MultipleChoices"] = 300] = "MultipleChoices";
+    Status[Status["MovedPermanently"] = 301] = "MovedPermanently";
+    Status[Status["Found"] = 302] = "Found";
+    Status[Status["SeeOther"] = 303] = "SeeOther";
+    Status[Status["NotModified"] = 304] = "NotModified";
+    Status[Status["UseProxy"] = 305] = "UseProxy";
+    Status[Status["TemporaryRedirect"] = 307] = "TemporaryRedirect";
+    Status[Status["PermanentRedirect"] = 308] = "PermanentRedirect";
+    Status[Status["BadRequest"] = 400] = "BadRequest";
+    Status[Status["Unauthorized"] = 401] = "Unauthorized";
+    Status[Status["PaymentRequired"] = 402] = "PaymentRequired";
+    Status[Status["Forbidden"] = 403] = "Forbidden";
+    Status[Status["NotFound"] = 404] = "NotFound";
+    Status[Status["MethodNotAllowed"] = 405] = "MethodNotAllowed";
+    Status[Status["NotAcceptable"] = 406] = "NotAcceptable";
+    Status[Status["ProxyAuthRequired"] = 407] = "ProxyAuthRequired";
+    Status[Status["RequestTimeout"] = 408] = "RequestTimeout";
+    Status[Status["Conflict"] = 409] = "Conflict";
+    Status[Status["Gone"] = 410] = "Gone";
+    Status[Status["LengthRequired"] = 411] = "LengthRequired";
+    Status[Status["PreconditionFailed"] = 412] = "PreconditionFailed";
+    Status[Status["RequestEntityTooLarge"] = 413] = "RequestEntityTooLarge";
+    Status[Status["RequestURITooLong"] = 414] = "RequestURITooLong";
+    Status[Status["UnsupportedMediaType"] = 415] = "UnsupportedMediaType";
+    Status[Status["RequestedRangeNotSatisfiable"] = 416] = "RequestedRangeNotSatisfiable";
+    Status[Status["ExpectationFailed"] = 417] = "ExpectationFailed";
+    Status[Status["Teapot"] = 418] = "Teapot";
+    Status[Status["MisdirectedRequest"] = 421] = "MisdirectedRequest";
+    Status[Status["UnprocessableEntity"] = 422] = "UnprocessableEntity";
+    Status[Status["Locked"] = 423] = "Locked";
+    Status[Status["FailedDependency"] = 424] = "FailedDependency";
+    Status[Status["TooEarly"] = 425] = "TooEarly";
+    Status[Status["UpgradeRequired"] = 426] = "UpgradeRequired";
+    Status[Status["PreconditionRequired"] = 428] = "PreconditionRequired";
+    Status[Status["TooManyRequests"] = 429] = "TooManyRequests";
+    Status[Status["RequestHeaderFieldsTooLarge"] = 431] = "RequestHeaderFieldsTooLarge";
+    Status[Status["UnavailableForLegalReasons"] = 451] = "UnavailableForLegalReasons";
+    Status[Status["InternalServerError"] = 500] = "InternalServerError";
+    Status[Status["NotImplemented"] = 501] = "NotImplemented";
+    Status[Status["BadGateway"] = 502] = "BadGateway";
+    Status[Status["ServiceUnavailable"] = 503] = "ServiceUnavailable";
+    Status[Status["GatewayTimeout"] = 504] = "GatewayTimeout";
+    Status[Status["HTTPVersionNotSupported"] = 505] = "HTTPVersionNotSupported";
+    Status[Status["VariantAlsoNegotiates"] = 506] = "VariantAlsoNegotiates";
+    Status[Status["InsufficientStorage"] = 507] = "InsufficientStorage";
+    Status[Status["LoopDetected"] = 508] = "LoopDetected";
+    Status[Status["NotExtended"] = 510] = "NotExtended";
+    Status[Status["NetworkAuthenticationRequired"] = 511] = "NetworkAuthenticationRequired";
 })(Status || (Status = {}));
 const STATUS_TEXT = new Map([
     [
@@ -11860,7 +11793,7 @@ const STATUS_TEXT = new Map([
     [
         Status.NetworkAuthenticationRequired,
         "Network Authentication Required"
-    ], 
+    ]
 ]);
 function emptyReader() {
     return {
@@ -11940,8 +11873,8 @@ function chunkedBodyReader(h, r) {
                 return buf.byteLength;
             } else {
                 const bufToFill = buf.subarray(0, chunkSize);
-                const eof = await r.readFull(bufToFill);
-                if (eof === null) {
+                const eof1 = await r.readFull(bufToFill);
+                if (eof1 === null) {
                     throw new Deno.errors.UnexpectedEof();
                 }
                 if (await tp.readLine() === null) {
@@ -11963,13 +11896,13 @@ function chunkedBodyReader(h, r) {
         read
     };
 }
-function isProhibidedForTrailer(key11) {
+function isProhibidedForTrailer(key) {
     const s = new Set([
         "transfer-encoding",
         "content-length",
         "trailer"
     ]);
-    return s.has(key11.toLowerCase());
+    return s.has(key.toLowerCase());
 }
 async function readTrailers(headers, r) {
     const trailers = parseTrailer(headers.get("trailer"));
@@ -11984,16 +11917,14 @@ async function readTrailers(headers, r) {
     }
     const undeclared = [
         ...result.keys()
-    ].filter((k)=>!trailerNames.includes(k)
-    );
+    ].filter((k)=>!trailerNames.includes(k));
     if (undeclared.length > 0) {
         throw new Deno.errors.InvalidData(`Undeclared trailers: ${Deno.inspect(undeclared)}.`);
     }
-    for (const [k1, v] of result){
-        headers.append(k1, v);
+    for (const [k, v] of result){
+        headers.append(k, v);
     }
-    const missingTrailers = trailerNames.filter((k)=>!result.has(k)
-    );
+    const missingTrailers = trailerNames.filter((k)=>!result.has(k));
     if (missingTrailers.length > 0) {
         throw new Deno.errors.InvalidData(`Missing trailers: ${Deno.inspect(missingTrailers)}.`);
     }
@@ -12003,21 +11934,18 @@ function parseTrailer(field) {
     if (field == null) {
         return undefined;
     }
-    const trailerNames = field.split(",").map((v)=>v.trim().toLowerCase()
-    );
+    const trailerNames = field.split(",").map((v)=>v.trim().toLowerCase());
     if (trailerNames.length === 0) {
         throw new Deno.errors.InvalidData("Empty trailer header.");
     }
-    const prohibited = trailerNames.filter((k)=>isProhibidedForTrailer(k)
-    );
+    const prohibited = trailerNames.filter((k)=>isProhibidedForTrailer(k));
     if (prohibited.length > 0) {
         throw new Deno.errors.InvalidData(`Prohibited trailer names: ${Deno.inspect(prohibited)}.`);
     }
-    return new Headers(trailerNames.map((key12)=>[
-            key12,
+    return new Headers(trailerNames.map((key)=>[
+            key,
             ""
-        ]
-    ));
+        ]));
 }
 async function writeChunkedBody(w, r) {
     for await (const chunk of Deno.iter(r)){
@@ -12042,22 +11970,19 @@ async function writeTrailers(w, headers, trailers) {
         throw new TypeError(`Trailers are only allowed for "transfer-encoding: chunked", got "transfer-encoding: ${transferEncoding}".`);
     }
     const writer = BufWriter.create(w);
-    const trailerNames = trailer.split(",").map((s)=>s.trim().toLowerCase()
-    );
-    const prohibitedTrailers = trailerNames.filter((k)=>isProhibidedForTrailer(k)
-    );
+    const trailerNames = trailer.split(",").map((s)=>s.trim().toLowerCase());
+    const prohibitedTrailers = trailerNames.filter((k)=>isProhibidedForTrailer(k));
     if (prohibitedTrailers.length > 0) {
         throw new TypeError(`Prohibited trailer names: ${Deno.inspect(prohibitedTrailers)}.`);
     }
     const undeclared = [
         ...trailers.keys()
-    ].filter((k)=>!trailerNames.includes(k)
-    );
+    ].filter((k)=>!trailerNames.includes(k));
     if (undeclared.length > 0) {
         throw new TypeError(`Undeclared trailers: ${Deno.inspect(undeclared)}.`);
     }
-    for (const [key13, value13] of trailers){
-        await writer.write(encoder.encode(`${key13}: ${value13}\r\n`));
+    for (const [key, value] of trailers){
+        await writer.write(encoder.encode(`${key}: ${value}\r\n`));
     }
     await writer.write(encoder.encode("\r\n"));
     await writer.flush();
@@ -12084,22 +12009,22 @@ async function writeResponse(w, r) {
             out += "transfer-encoding: chunked\r\n";
         }
     }
-    for (const [key14, value14] of headers){
-        out += `${key14}: ${value14}\r\n`;
+    for (const [key, value] of headers){
+        out += `${key}: ${value}\r\n`;
     }
     out += `\r\n`;
     const header = encoder.encode(out);
     const n = await writer.write(header);
     assert(n === header.byteLength);
     if (r.body instanceof Uint8Array) {
-        const n = await writer.write(r.body);
-        assert(n === r.body.byteLength);
+        const n1 = await writer.write(r.body);
+        assert(n1 === r.body.byteLength);
     } else if (headers.has("content-length")) {
         const contentLength = headers.get("content-length");
         assert(contentLength != null);
         const bodyLength = parseInt(contentLength);
-        const n = await Deno.copy(r.body, writer);
-        assert(n === bodyLength);
+        const n2 = await Deno.copy(r.body, writer);
+        assert(n2 === bodyLength);
     } else {
         await writeChunkedBody(writer, r.body);
     }
@@ -12124,8 +12049,7 @@ class ServerRequest {
     #body = undefined;
     #finalized = false;
     get done() {
-        return this.#done.then((e)=>e
-        );
+        return this.#done.then((e)=>e);
     }
     get contentLength() {
         if (this.#contentLength === undefined) {
@@ -12148,9 +12072,8 @@ class ServerRequest {
             } else {
                 const transferEncoding = this.headers.get("transfer-encoding");
                 if (transferEncoding != null) {
-                    const parts1 = transferEncoding.split(",").map((e)=>e.trim().toLowerCase()
-                    );
-                    assert(parts1.includes("chunked"), 'transfer-encoding must include "chunked" if content-length is not set');
+                    const parts = transferEncoding.split(",").map((e)=>e.trim().toLowerCase());
+                    assert(parts.includes("chunked"), 'transfer-encoding must include "chunked" if content-length is not set');
                     this.#body = chunkedBodyReader(this.headers, this.r);
                 } else {
                     this.#body = emptyReader();
@@ -12264,12 +12187,12 @@ class Server {
             let request;
             try {
                 request = await readRequest(conn, reader);
-            } catch (error) {
-                if (error instanceof Deno.errors.InvalidData || error instanceof Deno.errors.UnexpectedEof) {
+            } catch (error1) {
+                if (error1 instanceof Deno.errors.InvalidData || error1 instanceof Deno.errors.UnexpectedEof) {
                     try {
                         await writeResponse(writer, {
                             status: 400,
-                            body: encode1(`${error.message}\r\n\r\n`)
+                            body: encode1(`${error1.message}\r\n\r\n`)
                         });
                     } catch (error) {}
                 }
@@ -12287,7 +12210,7 @@ class Server {
             }
             try {
                 await request.finalize();
-            } catch (error1) {
+            } catch (error2) {
                 break;
             }
         }
@@ -12364,8 +12287,7 @@ function fixLength(req) {
         const arrClen = contentLength.split(",");
         if (arrClen.length > 1) {
             const distinct = [
-                ...new Set(arrClen.map((e)=>e.trim()
-                ))
+                ...new Set(arrClen.map((e)=>e.trim()))
             ];
             if (distinct.length > 1) {
                 throw Error("cannot contain multiple Content-Length headers");
@@ -12411,19 +12333,19 @@ async function readLong(buf) {
 function sliceLongToBytes(d, dest = new Array(8)) {
     let big = BigInt(d);
     for(let i = 0; i < 8; i++){
-        dest[7 - i] = Number(big & 255n);
+        dest[7 - i] = Number(big & 0xffn);
         big >>= 8n;
     }
     return dest;
 }
 var OpCode;
-(function(OpCode2) {
-    OpCode2[OpCode2["Continue"] = 0] = "Continue";
-    OpCode2[OpCode2["TextFrame"] = 1] = "TextFrame";
-    OpCode2[OpCode2["BinaryFrame"] = 2] = "BinaryFrame";
-    OpCode2[OpCode2["Close"] = 8] = "Close";
-    OpCode2[OpCode2["Ping"] = 9] = "Ping";
-    OpCode2[OpCode2["Pong"] = 10] = "Pong";
+(function(OpCode) {
+    OpCode[OpCode["Continue"] = 0x0] = "Continue";
+    OpCode[OpCode["TextFrame"] = 0x1] = "TextFrame";
+    OpCode[OpCode["BinaryFrame"] = 0x2] = "BinaryFrame";
+    OpCode[OpCode["Close"] = 0x8] = "Close";
+    OpCode[OpCode["Ping"] = 0x9] = "Ping";
+    OpCode[OpCode["Pong"] = 0xa] = "Pong";
 })(OpCode || (OpCode = {}));
 function unmask(payload, mask) {
     if (mask) {
@@ -12435,27 +12357,27 @@ function unmask(payload, mask) {
 async function writeFrame(frame, writer) {
     const payloadLength = frame.payload.byteLength;
     let header;
-    const hasMask = frame.mask ? 128 : 0;
+    const hasMask = frame.mask ? 0x80 : 0;
     if (frame.mask && frame.mask.byteLength !== 4) {
         throw new Error("invalid mask. mask must be 4 bytes: length=" + frame.mask.byteLength);
     }
     if (payloadLength < 126) {
         header = new Uint8Array([
-            128 | frame.opcode,
+            0x80 | frame.opcode,
             hasMask | payloadLength
         ]);
-    } else if (payloadLength < 65535) {
+    } else if (payloadLength < 0xffff) {
         header = new Uint8Array([
-            128 | frame.opcode,
-            hasMask | 126,
+            0x80 | frame.opcode,
+            hasMask | 0b01111110,
             payloadLength >>> 8,
-            payloadLength & 255, 
+            payloadLength & 0x00ff
         ]);
     } else {
         header = new Uint8Array([
-            128 | frame.opcode,
-            hasMask | 127,
-            ...sliceLongToBytes(payloadLength), 
+            0x80 | frame.opcode,
+            hasMask | 0b01111111,
+            ...sliceLongToBytes(payloadLength)
         ]);
     }
     if (frame.mask) {
@@ -12472,28 +12394,28 @@ async function readFrame(buf) {
     assert(b !== null);
     let isLastFrame = false;
     switch(b >>> 4){
-        case 8:
+        case 0b1000:
             isLastFrame = true;
             break;
-        case 0:
+        case 0b0000:
             isLastFrame = false;
             break;
         default:
             throw new Error("invalid signature");
     }
-    const opcode = b & 15;
+    const opcode = b & 0x0f;
     b = await buf.readByte();
     assert(b !== null);
     const hasMask = b >>> 7;
-    let payloadLength = b & 127;
+    let payloadLength = b & 0b01111111;
     if (payloadLength === 126) {
         const l = await readShort(buf);
         assert(l !== null);
         payloadLength = l;
     } else if (payloadLength === 127) {
-        const l = await readLong(buf);
-        assert(l !== null);
-        payloadLength = Number(l);
+        const l1 = await readLong(buf);
+        assert(l1 !== null);
+        payloadLength = Number(l1);
     }
     let mask;
     if (hasMask) {
@@ -12540,16 +12462,16 @@ class WebSocketImpl {
                     frames.push(frame);
                     payloadsLength += frame.payload.length;
                     if (frame.isLastFrame) {
-                        const concat1 = new Uint8Array(payloadsLength);
+                        const concat = new Uint8Array(payloadsLength);
                         let offs = 0;
-                        for (const frame of frames){
-                            concat1.set(frame.payload, offs);
-                            offs += frame.payload.length;
+                        for (const frame1 of frames){
+                            concat.set(frame1.payload, offs);
+                            offs += frame1.payload.length;
                         }
                         if (frames[0].opcode === OpCode.TextFrame) {
-                            yield decode2(concat1);
+                            yield decode2(concat);
                         } else {
-                            yield concat1;
+                            yield concat;
                         }
                         frames = [];
                         payloadsLength = 0;
@@ -12557,11 +12479,11 @@ class WebSocketImpl {
                     break;
                 case OpCode.Close:
                     {
-                        const code19 = frame.payload[0] << 8 | frame.payload[1];
+                        const code = frame.payload[0] << 8 | frame.payload[1];
                         const reason = decode2(frame.payload.subarray(2, frame.payload.length));
-                        await this.close(code19, reason);
+                        await this.close(code, reason);
                         yield {
-                            code: code19,
+                            code,
                             reason
                         };
                         return;
@@ -12592,9 +12514,7 @@ class WebSocketImpl {
         if (!entry) return;
         if (this._isClosed) return;
         const { d , frame  } = entry;
-        writeFrame(frame, this.bufWriter).then(()=>d.resolve()
-        ).catch((e)=>d.reject(e)
-        ).finally(()=>{
+        writeFrame(frame, this.bufWriter).then(()=>d.resolve()).catch((e)=>d.reject(e)).finally(()=>{
             this.sendQueue.shift();
             this.dequeue();
         });
@@ -12638,11 +12558,11 @@ class WebSocketImpl {
     get isClosed() {
         return this._isClosed;
     }
-    async close(code20 = 1000, reason) {
+    async close(code = 1000, reason) {
         try {
             const header = [
-                code20 >>> 8,
-                code20 & 255
+                code >>> 8,
+                code & 0x00ff
             ];
             let payload;
             if (reason) {
@@ -12672,14 +12592,13 @@ class WebSocketImpl {
         if (this.isClosed) return;
         try {
             this.conn.close();
-        } catch (e1) {
-            console.error(e1);
+        } catch (e) {
+            console.error(e);
         } finally{
             this._isClosed = true;
             const rest = this.sendQueue;
             this.sendQueue = [];
-            rest.forEach((e)=>e.d.reject(new Deno.errors.ConnectionReset("Socket has already been closed"))
-            );
+            rest.forEach((e)=>e.d.reject(new Deno.errors.ConnectionReset("Socket has already been closed")));
         }
     }
 }
@@ -12732,16 +12651,16 @@ async function acceptWebSocket(req) {
     }
     throw new Error("request is not acceptable");
 }
-function lexer(str10) {
+function lexer(str) {
     const tokens = [];
     let i = 0;
-    while(i < str10.length){
-        const __char = str10[i];
+    while(i < str.length){
+        const __char = str[i];
         if (__char === "*" || __char === "+" || __char === "?") {
             tokens.push({
                 type: "MODIFIER",
                 index: i,
-                value: str10[i++]
+                value: str[i++]
             });
             continue;
         }
@@ -12749,7 +12668,7 @@ function lexer(str10) {
             tokens.push({
                 type: "ESCAPED_CHAR",
                 index: i++,
-                value: str10[i++]
+                value: str[i++]
             });
             continue;
         }
@@ -12757,7 +12676,7 @@ function lexer(str10) {
             tokens.push({
                 type: "OPEN",
                 index: i,
-                value: str10[i++]
+                value: str[i++]
             });
             continue;
         }
@@ -12765,17 +12684,17 @@ function lexer(str10) {
             tokens.push({
                 type: "CLOSE",
                 index: i,
-                value: str10[i++]
+                value: str[i++]
             });
             continue;
         }
         if (__char === ":") {
             let name = "";
             let j = i + 1;
-            while(j < str10.length){
-                const code21 = str10.charCodeAt(j);
-                if (code21 >= 48 && code21 <= 57 || code21 >= 65 && code21 <= 90 || code21 >= 97 && code21 <= 122 || code21 === 95) {
-                    name += str10[j++];
+            while(j < str.length){
+                const code = str.charCodeAt(j);
+                if (code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122 || code === 95) {
+                    name += str[j++];
                     continue;
                 }
                 break;
@@ -12792,28 +12711,28 @@ function lexer(str10) {
         if (__char === "(") {
             let count = 1;
             let pattern = "";
-            let j = i + 1;
-            if (str10[j] === "?") {
-                throw new TypeError(`Pattern cannot start with "?" at ${j}`);
+            let j1 = i + 1;
+            if (str[j1] === "?") {
+                throw new TypeError(`Pattern cannot start with "?" at ${j1}`);
             }
-            while(j < str10.length){
-                if (str10[j] === "\\") {
-                    pattern += str10[j++] + str10[j++];
+            while(j1 < str.length){
+                if (str[j1] === "\\") {
+                    pattern += str[j1++] + str[j1++];
                     continue;
                 }
-                if (str10[j] === ")") {
+                if (str[j1] === ")") {
                     count--;
                     if (count === 0) {
-                        j++;
+                        j1++;
                         break;
                     }
-                } else if (str10[j] === "(") {
+                } else if (str[j1] === "(") {
                     count++;
-                    if (str10[j + 1] !== "?") {
-                        throw new TypeError(`Capturing groups are not allowed at ${j}`);
+                    if (str[j1 + 1] !== "?") {
+                        throw new TypeError(`Capturing groups are not allowed at ${j1}`);
                     }
                 }
-                pattern += str10[j++];
+                pattern += str[j1++];
             }
             if (count) throw new TypeError(`Unbalanced pattern at ${i}`);
             if (!pattern) throw new TypeError(`Missing pattern at ${i}`);
@@ -12822,13 +12741,13 @@ function lexer(str10) {
                 index: i,
                 value: pattern
             });
-            i = j;
+            i = j1;
             continue;
         }
         tokens.push({
             type: "CHAR",
             index: i,
-            value: str10[i++]
+            value: str[i++]
         });
     }
     tokens.push({
@@ -12838,28 +12757,28 @@ function lexer(str10) {
     });
     return tokens;
 }
-function parse3(str11, options = {}) {
-    const tokens = lexer(str11);
+function parse3(str, options = {}) {
+    const tokens = lexer(str);
     const { prefixes ="./"  } = options;
     const defaultPattern = `[^${escapeString(options.delimiter || "/#?")}]+?`;
-    const result1 = [];
-    let key15 = 0;
+    const result = [];
+    let key = 0;
     let i = 0;
-    let path28 = "";
+    let path = "";
     const tryConsume = (type)=>{
         if (i < tokens.length && tokens[i].type === type) return tokens[i++].value;
     };
     const mustConsume = (type)=>{
-        const value15 = tryConsume(type);
-        if (value15 !== undefined) return value15;
+        const value = tryConsume(type);
+        if (value !== undefined) return value;
         const { type: nextType , index  } = tokens[i];
         throw new TypeError(`Unexpected ${nextType} at ${index}, expected ${type}`);
     };
     const consumeText = ()=>{
         let result = "";
-        let value16;
-        while(value16 = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")){
-            result += value16;
+        let value;
+        while(value = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")){
+            result += value;
         }
         return result;
     };
@@ -12870,15 +12789,15 @@ function parse3(str11, options = {}) {
         if (name || pattern) {
             let prefix = __char || "";
             if (prefixes.indexOf(prefix) === -1) {
-                path28 += prefix;
+                path += prefix;
                 prefix = "";
             }
-            if (path28) {
-                result1.push(path28);
-                path28 = "";
+            if (path) {
+                result.push(path);
+                path = "";
             }
-            result1.push({
-                name: name || key15++,
+            result.push({
+                name: name || key++,
                 prefix,
                 suffix: "",
                 pattern: pattern || defaultPattern,
@@ -12886,26 +12805,26 @@ function parse3(str11, options = {}) {
             });
             continue;
         }
-        const value17 = __char || tryConsume("ESCAPED_CHAR");
-        if (value17) {
-            path28 += value17;
+        const value = __char || tryConsume("ESCAPED_CHAR");
+        if (value) {
+            path += value;
             continue;
         }
-        if (path28) {
-            result1.push(path28);
-            path28 = "";
+        if (path) {
+            result.push(path);
+            path = "";
         }
         const open = tryConsume("OPEN");
         if (open) {
-            const prefix = consumeText();
-            const name = tryConsume("NAME") || "";
-            const pattern = tryConsume("PATTERN") || "";
+            const prefix1 = consumeText();
+            const name1 = tryConsume("NAME") || "";
+            const pattern1 = tryConsume("PATTERN") || "";
             const suffix = consumeText();
             mustConsume("CLOSE");
-            result1.push({
-                name: name || (pattern ? key15++ : ""),
-                pattern: name && !pattern ? defaultPattern : pattern,
-                prefix,
+            result.push({
+                name: name1 || (pattern1 ? key++ : ""),
+                pattern: name1 && !pattern1 ? defaultPattern : pattern1,
+                prefix: prefix1,
                 suffix,
                 modifier: tryConsume("MODIFIER") || ""
             });
@@ -12913,74 +12832,73 @@ function parse3(str11, options = {}) {
         }
         mustConsume("END");
     }
-    return result1;
+    return result;
 }
-function compile(str12, options) {
-    return tokensToFunction(parse3(str12, options), options);
+function compile(str, options) {
+    return tokensToFunction(parse3(str, options), options);
 }
 function tokensToFunction(tokens, options = {}) {
     const reFlags = flags(options);
-    const { encode: encode2 = (x)=>x
-     , validate =true  } = options;
+    const { encode =(x)=>x , validate =true  } = options;
     const matches = tokens.map((token)=>{
         if (typeof token === "object") {
             return new RegExp(`^(?:${token.pattern})$`, reFlags);
         }
     });
     return (data)=>{
-        let path29 = "";
+        let path = "";
         for(let i = 0; i < tokens.length; i++){
             const token = tokens[i];
             if (typeof token === "string") {
-                path29 += token;
+                path += token;
                 continue;
             }
-            const value18 = data ? data[token.name] : undefined;
+            const value = data ? data[token.name] : undefined;
             const optional = token.modifier === "?" || token.modifier === "*";
             const repeat = token.modifier === "*" || token.modifier === "+";
-            if (Array.isArray(value18)) {
+            if (Array.isArray(value)) {
                 if (!repeat) {
                     throw new TypeError(`Expected "${token.name}" to not repeat, but got an array`);
                 }
-                if (value18.length === 0) {
+                if (value.length === 0) {
                     if (optional) continue;
                     throw new TypeError(`Expected "${token.name}" to not be empty`);
                 }
-                for(let j = 0; j < value18.length; j++){
-                    const segment = encode2(value18[j], token);
+                for(let j = 0; j < value.length; j++){
+                    const segment = encode(value[j], token);
                     if (validate && !matches[i].test(segment)) {
                         throw new TypeError(`Expected all "${token.name}" to match "${token.pattern}", but got "${segment}"`);
                     }
-                    path29 += token.prefix + segment + token.suffix;
+                    path += token.prefix + segment + token.suffix;
                 }
                 continue;
             }
-            if (typeof value18 === "string" || typeof value18 === "number") {
-                const segment = encode2(String(value18), token);
-                if (validate && !matches[i].test(segment)) {
-                    throw new TypeError(`Expected "${token.name}" to match "${token.pattern}", but got "${segment}"`);
+            if (typeof value === "string" || typeof value === "number") {
+                const segment1 = encode(String(value), token);
+                if (validate && !matches[i].test(segment1)) {
+                    throw new TypeError(`Expected "${token.name}" to match "${token.pattern}", but got "${segment1}"`);
                 }
-                path29 += token.prefix + segment + token.suffix;
+                path += token.prefix + segment1 + token.suffix;
                 continue;
             }
             if (optional) continue;
             const typeOfMessage = repeat ? "an array" : "a string";
             throw new TypeError(`Expected "${token.name}" to be ${typeOfMessage}`);
         }
-        return path29;
+        return path;
     };
 }
-function escapeString(str13) {
-    return str13.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
+function escapeString(str) {
+    return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
 function flags(options) {
     return options && options.sensitive ? "" : "i";
 }
-function regexpToRegexp(path30, keys) {
-    if (!keys) return path30;
+function regexpToRegexp(path, keys) {
+    if (!keys) return path;
     const groupsRegex = /\((?:\?<(.*?)>)?(?!\?)/g;
     let index = 0;
-    let execResult = groupsRegex.exec(path30.source);
+    let execResult = groupsRegex.exec(path.source);
     while(execResult){
         keys.push({
             name: execResult[1] || index++,
@@ -12989,36 +12907,34 @@ function regexpToRegexp(path30, keys) {
             modifier: "",
             pattern: ""
         });
-        execResult = groupsRegex.exec(path30.source);
+        execResult = groupsRegex.exec(path.source);
     }
-    return path30;
+    return path;
 }
 function arrayToRegexp(paths, keys, options) {
-    const parts2 = paths.map((path31)=>pathToRegexp(path31, keys, options).source
-    );
-    return new RegExp(`(?:${parts2.join("|")})`, flags(options));
+    const parts = paths.map((path)=>pathToRegexp(path, keys, options).source);
+    return new RegExp(`(?:${parts.join("|")})`, flags(options));
 }
-function stringToRegexp(path32, keys, options) {
-    return tokensToRegexp(parse3(path32, options), keys, options);
+function stringToRegexp(path, keys, options) {
+    return tokensToRegexp(parse3(path, options), keys, options);
 }
 function tokensToRegexp(tokens, keys, options = {}) {
-    const { strict =false , start =true , end =true , encode: encode3 = (x)=>x
-      } = options;
+    const { strict =false , start =true , end =true , encode =(x)=>x  } = options;
     const endsWith = `[${escapeString(options.endsWith || "")}]|$`;
-    const delimiter3 = `[${escapeString(options.delimiter || "/#?")}]`;
+    const delimiter = `[${escapeString(options.delimiter || "/#?")}]`;
     let route = start ? "^" : "";
     for (const token of tokens){
         if (typeof token === "string") {
-            route += escapeString(encode3(token));
+            route += escapeString(encode(token));
         } else {
-            const prefix = escapeString(encode3(token.prefix));
-            const suffix = escapeString(encode3(token.suffix));
+            const prefix = escapeString(encode(token.prefix));
+            const suffix = escapeString(encode(token.suffix));
             if (token.pattern) {
                 if (keys) keys.push(token);
                 if (prefix || suffix) {
                     if (token.modifier === "+" || token.modifier === "*") {
-                        const mod2 = token.modifier === "*" ? "?" : "";
-                        route += `(?:${prefix}((?:${token.pattern})(?:${suffix}${prefix}(?:${token.pattern}))*)${suffix})${mod2}`;
+                        const mod = token.modifier === "*" ? "?" : "";
+                        route += `(?:${prefix}((?:${token.pattern})(?:${suffix}${prefix}(?:${token.pattern}))*)${suffix})${mod}`;
                     } else {
                         route += `(?:${prefix}(${token.pattern})${suffix})${token.modifier}`;
                     }
@@ -13031,24 +12947,24 @@ function tokensToRegexp(tokens, keys, options = {}) {
         }
     }
     if (end) {
-        if (!strict) route += `${delimiter3}?`;
+        if (!strict) route += `${delimiter}?`;
         route += !options.endsWith ? "$" : `(?=${endsWith})`;
     } else {
         const endToken = tokens[tokens.length - 1];
-        const isEndDelimited = typeof endToken === "string" ? delimiter3.indexOf(endToken[endToken.length - 1]) > -1 : endToken === undefined;
+        const isEndDelimited = typeof endToken === "string" ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : endToken === undefined;
         if (!strict) {
-            route += `(?:${delimiter3}(?=${endsWith}))?`;
+            route += `(?:${delimiter}(?=${endsWith}))?`;
         }
         if (!isEndDelimited) {
-            route += `(?=${delimiter3}|${endsWith})`;
+            route += `(?=${delimiter}|${endsWith})`;
         }
     }
     return new RegExp(route, flags(options));
 }
-function pathToRegexp(path33, keys, options) {
-    if (path33 instanceof RegExp) return regexpToRegexp(path33, keys);
-    if (Array.isArray(path33)) return arrayToRegexp(path33, keys, options);
-    return stringToRegexp(path33, keys, options);
+function pathToRegexp(path, keys, options) {
+    if (path instanceof RegExp) return regexpToRegexp(path, keys);
+    if (Array.isArray(path)) return arrayToRegexp(path, keys, options);
+    return stringToRegexp(path, keys, options);
 }
 const errorStatusMap = {
     "BadRequest": 400,
@@ -13141,17 +13057,17 @@ function format3(obj) {
     if (!SUBTYPE_NAME_REGEXP.test(subtype)) {
         throw new TypeError("Invalid subtype.");
     }
-    let str14 = `${type}/${subtype}`;
+    let str = `${type}/${subtype}`;
     if (suffix) {
         if (!TYPE_NAME_REGEXP.test(suffix)) {
             throw new TypeError("Invalid suffix.");
         }
-        str14 += `+${suffix}`;
+        str += `+${suffix}`;
     }
-    return str14;
+    return str;
 }
-function parse4(str15) {
-    const match = TYPE_REGEXP.exec(str15.toLowerCase());
+function parse4(str) {
+    const match = TYPE_REGEXP.exec(str.toLowerCase());
     if (!match) {
         throw new TypeError("Invalid media type.");
     }
@@ -13196,24 +13112,24 @@ function normalize3(type) {
     }
     return type.includes("/") ? type : lookup(type);
 }
-function normalizeType(value19) {
+function normalizeType(value) {
     try {
-        const val = value19.split(";");
+        const val = value.split(";");
         const type = parse4(val[0]);
         return format3(type);
     } catch  {
         return;
     }
 }
-function isMediaType(value20, types2) {
-    const val = normalizeType(value20);
+function isMediaType(value, types) {
+    const val = normalizeType(value);
     if (!val) {
         return false;
     }
-    if (!types2.length) {
+    if (!types.length) {
         return val;
     }
-    for (const type of types2){
+    for (const type of types){
         if (mimeMatch(normalize3(type), val)) {
             return type[0] === "+" || type.includes("*") ? val : type;
         }
@@ -13237,10 +13153,10 @@ function decodeComponent(text) {
 function encodeUrl(url) {
     return String(url).replace(UNMATCHED_SURROGATE_PAIR_REGEXP, UNMATCHED_SURROGATE_PAIR_REPLACE).replace(ENCODE_CHARS_REGEXP, encodeURI);
 }
-function getRandomFilename(prefix = "", extension2 = "") {
-    return `${prefix}${new Sha1().update(crypto.getRandomValues(new Uint8Array(256))).hex()}${extension2 ? `.${extension2}` : ""}`;
+function getRandomFilename(prefix = "", extension = "") {
+    return `${prefix}${new Sha1().update(crypto.getRandomValues(new Uint8Array(256))).hex()}${extension ? `.${extension}` : ""}`;
 }
-function isRedirectStatus(value21) {
+function isRedirectStatus(value) {
     return [
         Status.MultipleChoices,
         Status.MovedPermanently,
@@ -13248,11 +13164,11 @@ function isRedirectStatus(value21) {
         Status.SeeOther,
         Status.UseProxy,
         Status.TemporaryRedirect,
-        Status.PermanentRedirect, 
-    ].includes(value21);
+        Status.PermanentRedirect
+    ].includes(value);
 }
-function isHtml(value22) {
-    return /^\s*<(?:!DOCTYPE|html|body)/i.test(value22);
+function isHtml(value) {
+    return /^\s*<(?:!DOCTYPE|html|body)/i.test(value);
 }
 function skipLWSPChar(u8) {
     const result = new Uint8Array(u8.length);
@@ -13263,37 +13179,37 @@ function skipLWSPChar(u8) {
     }
     return result.slice(0, j);
 }
-function stripEol(value23) {
-    if (value23[value23.byteLength - 1] == LF1) {
+function stripEol(value) {
+    if (value[value.byteLength - 1] == LF1) {
         let drop = 1;
-        if (value23.byteLength > 1 && value23[value23.byteLength - 2] === CR1) {
+        if (value.byteLength > 1 && value[value.byteLength - 2] === CR1) {
             drop = 2;
         }
-        return value23.subarray(0, value23.byteLength - drop);
+        return value.subarray(0, value.byteLength - drop);
     }
-    return value23;
+    return value;
 }
 const UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
 function resolvePath(rootPath, relativePath) {
-    let path34 = relativePath;
+    let path = relativePath;
     let root = rootPath;
     if (relativePath === undefined) {
-        path34 = rootPath;
+        path = rootPath;
         root = ".";
     }
-    if (path34 == null) {
+    if (path == null) {
         throw new TypeError("Argument relativePath is required.");
     }
-    if (path34.includes("\0")) {
+    if (path.includes("\0")) {
         throw createHttpError(400, "Malicious Path");
     }
-    if (isAbsolute2(path34)) {
+    if (isAbsolute2(path)) {
         throw createHttpError(400, "Malicious Path");
     }
-    if (UP_PATH_REGEXP.test(normalize2("." + sep2 + path34))) {
+    if (UP_PATH_REGEXP.test(normalize2("." + sep2 + path))) {
         throw createHttpError(403);
     }
-    return normalize2(join2(root, path34));
+    return normalize2(join2(root, path));
 }
 const MIN_BUF_SIZE1 = 16;
 const CR2 = "\r".charCodeAt(0);
@@ -13428,8 +13344,8 @@ const COLON = ":".charCodeAt(0);
 const HTAB1 = "\t".charCodeAt(0);
 const SPACE1 = " ".charCodeAt(0);
 const decoder1 = new TextDecoder();
-function toParamRegExp(attributePattern, flags1) {
-    return new RegExp(`(?:^|;)\\s*${attributePattern}\\s*=\\s*` + `(` + `[^";\\s][^;\\s]*` + `|` + `"(?:[^"\\\\]|\\\\"?)+"?` + `)`, flags1);
+function toParamRegExp(attributePattern, flags) {
+    return new RegExp(`(?:^|;)\\s*${attributePattern}\\s*=\\s*` + `(` + `[^";\\s][^;\\s]*` + `|` + `"(?:[^"\\\\]|\\\\"?)+"?` + `)`, flags);
 }
 async function readHeaders(body) {
     const headers = {};
@@ -13443,63 +13359,62 @@ async function readHeaders(body) {
         if (i === -1) {
             throw new httpErrors.BadRequest(`Malformed header: ${decoder1.decode(bytes)}`);
         }
-        const key16 = decoder1.decode(bytes.subarray(0, i)).trim().toLowerCase();
-        if (key16 === "") {
+        const key = decoder1.decode(bytes.subarray(0, i)).trim().toLowerCase();
+        if (key === "") {
             throw new httpErrors.BadRequest("Invalid header key.");
         }
         i++;
         while(i < bytes.byteLength && (bytes[i] === SPACE1 || bytes[i] === HTAB1)){
             i++;
         }
-        const value24 = decoder1.decode(bytes.subarray(i)).trim();
-        headers[key16] = value24;
+        const value = decoder1.decode(bytes.subarray(i)).trim();
+        headers[key] = value;
         readResult = await body.readLine();
     }
     throw new httpErrors.BadRequest("Unexpected end of body reached.");
 }
-function unquote(value25) {
-    if (value25.startsWith(`"`)) {
-        const parts3 = value25.slice(1).split(`\\"`);
-        for(let i = 0; i < parts3.length; ++i){
-            const quoteIndex = parts3[i].indexOf(`"`);
+function unquote(value) {
+    if (value.startsWith(`"`)) {
+        const parts = value.slice(1).split(`\\"`);
+        for(let i = 0; i < parts.length; ++i){
+            const quoteIndex = parts[i].indexOf(`"`);
             if (quoteIndex !== -1) {
-                parts3[i] = parts3[i].slice(0, quoteIndex);
-                parts3.length = i + 1;
+                parts[i] = parts[i].slice(0, quoteIndex);
+                parts.length = i + 1;
             }
-            parts3[i] = parts3[i].replace(/\\(.)/g, "$1");
+            parts[i] = parts[i].replace(/\\(.)/g, "$1");
         }
-        value25 = parts3.join(`"`);
+        value = parts.join(`"`);
     }
-    return value25;
+    return value;
 }
 let needsEncodingFixup = false;
-function fixupEncoding(value26) {
-    if (needsEncodingFixup && /[\x80-\xff]/.test(value26)) {
-        value26 = textDecode("utf-8", value26);
+function fixupEncoding(value) {
+    if (needsEncodingFixup && /[\x80-\xff]/.test(value)) {
+        value = textDecode("utf-8", value);
         if (needsEncodingFixup) {
-            value26 = textDecode("iso-8859-1", value26);
+            value = textDecode("iso-8859-1", value);
         }
     }
-    return value26;
+    return value;
 }
 const FILENAME_STAR_REGEX = toParamRegExp("filename\\*", "i");
 const FILENAME_START_ITER_REGEX = toParamRegExp("filename\\*((?!0\\d)\\d+)(\\*?)", "ig");
 const FILENAME_REGEX = toParamRegExp("filename", "i");
-function rfc2047decode(value27) {
-    if (!value27.startsWith("=?") || /[\x00-\x19\x80-\xff]/.test(value27)) {
-        return value27;
+function rfc2047decode(value) {
+    if (!value.startsWith("=?") || /[\x00-\x19\x80-\xff]/.test(value)) {
+        return value;
     }
-    return value27.replace(/=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g, (_, charset1, encoding, text)=>{
+    return value.replace(/=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g, (_, charset, encoding, text)=>{
         if (encoding === "q" || encoding === "Q") {
             text = text.replace(/_/g, " ");
-            text = text.replace(/=([0-9a-fA-F]{2})/g, (_, hex)=>String.fromCharCode(parseInt(hex, 16))
-            );
-            return textDecode(charset1, text);
+            text = text.replace(/=([0-9a-fA-F]{2})/g, (_, hex)=>String.fromCharCode(parseInt(hex, 16)));
+            return textDecode(charset, text);
         }
         try {
             text = atob(text);
         } catch  {}
-        return textDecode(charset1, text);
+        return textDecode(charset, text);
     });
 }
 function rfc2231getParam(header) {
@@ -13519,48 +13434,46 @@ function rfc2231getParam(header) {
             part
         ];
     }
-    const parts4 = [];
-    for(let n = 0; n < matches.length; ++n){
-        if (!(n in matches)) {
+    const parts = [];
+    for(let n1 = 0; n1 < matches.length; ++n1){
+        if (!(n1 in matches)) {
             break;
         }
-        let [quote, part] = matches[n];
-        part = unquote(part);
-        if (quote) {
-            part = unescape(part);
-            if (n === 0) {
-                part = rfc5987decode(part);
+        let [quote1, part1] = matches[n1];
+        part1 = unquote(part1);
+        if (quote1) {
+            part1 = unescape(part1);
+            if (n1 === 0) {
+                part1 = rfc5987decode(part1);
             }
         }
-        parts4.push(part);
+        parts.push(part1);
     }
-    return parts4.join("");
+    return parts.join("");
 }
-function rfc5987decode(value28) {
-    const encodingEnd = value28.indexOf(`'`);
+function rfc5987decode(value) {
+    const encodingEnd = value.indexOf(`'`);
     if (encodingEnd === -1) {
-        return value28;
+        return value;
     }
-    const encoding = value28.slice(0, encodingEnd);
-    const langValue = value28.slice(encodingEnd + 1);
+    const encoding = value.slice(0, encodingEnd);
+    const langValue = value.slice(encodingEnd + 1);
     return textDecode(encoding, langValue.replace(/^[^']*'/, ""));
 }
-function textDecode(encoding, value29) {
+function textDecode(encoding, value) {
     if (encoding) {
         try {
-            const decoder5 = new TextDecoder(encoding, {
+            const decoder = new TextDecoder(encoding, {
                 fatal: true
             });
-            const bytes = Array.from(value29, (c)=>c.charCodeAt(0)
-            );
-            if (bytes.every((code22)=>code22 <= 255
-            )) {
-                value29 = decoder5.decode(new Uint8Array(bytes));
+            const bytes = Array.from(value, (c)=>c.charCodeAt(0));
+            if (bytes.every((code)=>code <= 0xFF)) {
+                value = decoder.decode(new Uint8Array(bytes));
                 needsEncodingFixup = false;
             }
         } catch  {}
     }
-    return value29;
+    return value;
 }
 function getFilename(header) {
     needsEncodingFixup = true;
@@ -13569,14 +13482,14 @@ function getFilename(header) {
         const [, filename] = matches;
         return fixupEncoding(rfc2047decode(rfc5987decode(unescape(unquote(filename)))));
     }
-    const filename = rfc2231getParam(header);
-    if (filename) {
-        return fixupEncoding(rfc2047decode(filename));
+    const filename1 = rfc2231getParam(header);
+    if (filename1) {
+        return fixupEncoding(rfc2047decode(filename1));
     }
     matches = FILENAME_REGEX.exec(header);
     if (matches) {
-        const [, filename] = matches;
-        return fixupEncoding(rfc2047decode(unquote(filename)));
+        const [, filename2] = matches;
+        return fixupEncoding(rfc2047decode(unquote(filename2)));
     }
     return "";
 }
@@ -13606,8 +13519,8 @@ async function readToStartOrEnd(body, start, end) {
     throw new httpErrors.BadRequest("Unable to find multi-part boundary.");
 }
 async function* parts({ body , final: __final , part , maxFileSize , maxSize , outPath , prefix  }) {
-    async function getFile(contentType1) {
-        const ext = extension(contentType1);
+    async function getFile(contentType) {
+        const ext = extension(contentType);
         if (!ext) {
             throw new httpErrors.BadRequest(`Invalid media type for part: ${ext}`);
         }
@@ -13626,7 +13539,7 @@ async function* parts({ body , final: __final , part , maxFileSize , maxSize , o
     }
     while(true){
         const headers = await readHeaders(body);
-        const contentType2 = headers["content-type"];
+        const contentType = headers["content-type"];
         const contentDisposition = headers["content-disposition"];
         if (!contentDisposition) {
             throw new httpErrors.BadRequest("Form data part missing content-disposition header");
@@ -13640,7 +13553,7 @@ async function* parts({ body , final: __final , part , maxFileSize , maxSize , o
         }
         let [, name] = matches;
         name = unquote(name);
-        if (contentType2) {
+        if (contentType) {
             const originalName = getFilename(contentDisposition);
             let byteLength = 0;
             let file;
@@ -13649,7 +13562,7 @@ async function* parts({ body , final: __final , part , maxFileSize , maxSize , o
             if (maxSize) {
                 buf = new Uint8Array();
             } else {
-                const result = await getFile(contentType2);
+                const result = await getFile(contentType);
                 filename = result[0];
                 file = result[1];
             }
@@ -13668,11 +13581,11 @@ async function* parts({ body , final: __final , part , maxFileSize , maxSize , o
                         name,
                         {
                             content: buf,
-                            contentType: contentType2,
+                            contentType,
                             name,
                             filename,
                             originalName
-                        }, 
+                        }
                     ];
                     if (isEqual(strippedBytes, __final)) {
                         return;
@@ -13688,9 +13601,9 @@ async function* parts({ body , final: __final , part , maxFileSize , maxSize , o
                 }
                 if (buf) {
                     if (byteLength > maxSize) {
-                        const result = await getFile(contentType2);
-                        filename = result[0];
-                        file = result[1];
+                        const result1 = await getFile(contentType);
+                        filename = result1[0];
+                        file = result1[1];
                         await Deno.writeAll(file, buf);
                         buf = undefined;
                     } else {
@@ -13704,22 +13617,22 @@ async function* parts({ body , final: __final , part , maxFileSize , maxSize , o
         } else {
             const lines = [];
             while(true){
-                const readResult = await body.readLine();
-                if (!readResult) {
+                const readResult1 = await body.readLine();
+                if (!readResult1) {
                     throw new httpErrors.BadRequest("Unexpected EOF reached");
                 }
-                const { bytes  } = readResult;
-                if (isEqual(bytes, part) || isEqual(bytes, __final)) {
+                const { bytes: bytes1  } = readResult1;
+                if (isEqual(bytes1, part) || isEqual(bytes1, __final)) {
                     yield [
                         name,
                         lines.join("\n")
                     ];
-                    if (isEqual(bytes, __final)) {
+                    if (isEqual(bytes1, __final)) {
                         return;
                     }
                     break;
                 }
-                lines.push(decoder2.decode(bytes));
+                lines.push(decoder2.decode(bytes1));
             }
         }
     }
@@ -13729,10 +13642,10 @@ class FormDataReader {
     #boundaryFinal;
     #boundaryPart;
     #reading = false;
-    constructor(contentType3, body){
-        const matches = contentType3.match(BOUNDARY_PARAM_REGEX);
+    constructor(contentType, body){
+        const matches = contentType.match(BOUNDARY_PARAM_REGEX);
         if (!matches) {
-            throw new httpErrors.BadRequest(`Content type "${contentType3}" does not contain a valid boundary.`);
+            throw new httpErrors.BadRequest(`Content type "${contentType}" does not contain a valid boundary.`);
         }
         let [, boundary] = matches;
         boundary = unquote(boundary);
@@ -13745,7 +13658,7 @@ class FormDataReader {
             throw new Error("Body is already being read.");
         }
         this.#reading = true;
-        const { outPath , maxFileSize =10485760 , maxSize =0 , bufferSize =1048576 ,  } = options;
+        const { outPath , maxFileSize =10485760 , maxSize =0 , bufferSize =1048576  } = options;
         const body = new BufReader1(this.#body, bufferSize);
         const result = {
             fields: {}
@@ -13762,14 +13675,14 @@ class FormDataReader {
                 maxSize,
                 outPath
             })){
-                const [key17, value30] = part;
-                if (typeof value30 === "string") {
-                    result.fields[key17] = value30;
+                const [key, value] = part;
+                if (typeof value === "string") {
+                    result.fields[key] = value;
                 } else {
                     if (!result.files) {
                         result.files = [];
                     }
-                    result.files.push(value30);
+                    result.files.push(value);
                 }
             }
         } catch (err) {
@@ -13786,7 +13699,7 @@ class FormDataReader {
             throw new Error("Body is already being read.");
         }
         this.#reading = true;
-        const { outPath , maxFileSize =10485760 , maxSize =0 , bufferSize =32000 ,  } = options;
+        const { outPath , maxFileSize =10485760 , maxSize =0 , bufferSize =32000  } = options;
         const body = new BufReader1(this.#body, bufferSize);
         if (!await readToStartOrEnd(body, this.#boundaryPart, this.#boundaryFinal)) {
             return;
@@ -13884,69 +13797,65 @@ class RequestBody {
             };
         }
         if (!type) {
-            const contentType4 = this.#headers.get("content-type");
-            assert1(contentType4);
+            const contentType = this.#headers.get("content-type");
+            assert1(contentType);
             contentTypes = contentTypes ?? {};
             const contentTypesJson = [
                 ...defaultBodyContentTypes.json,
-                ...contentTypes.json ?? [], 
+                ...contentTypes.json ?? []
             ];
             const contentTypesForm = [
                 ...defaultBodyContentTypes.form,
-                ...contentTypes.form ?? [], 
+                ...contentTypes.form ?? []
             ];
             const contentTypesFormData = [
                 ...defaultBodyContentTypes.formData,
-                ...contentTypes.formData ?? [], 
+                ...contentTypes.formData ?? []
             ];
             const contentTypesText = [
                 ...defaultBodyContentTypes.text,
-                ...contentTypes.text ?? [], 
+                ...contentTypes.text ?? []
             ];
-            if (contentTypes.raw && isMediaType(contentType4, contentTypes.raw)) {
+            if (contentTypes.raw && isMediaType(contentType, contentTypes.raw)) {
                 type = "raw";
-            } else if (isMediaType(contentType4, contentTypesJson)) {
+            } else if (isMediaType(contentType, contentTypesJson)) {
                 type = "json";
-            } else if (isMediaType(contentType4, contentTypesForm)) {
+            } else if (isMediaType(contentType, contentTypesForm)) {
                 type = "form";
-            } else if (isMediaType(contentType4, contentTypesFormData)) {
+            } else if (isMediaType(contentType, contentTypesFormData)) {
                 type = "form-data";
-            } else if (isMediaType(contentType4, contentTypesText)) {
+            } else if (isMediaType(contentType, contentTypesText)) {
                 type = "text";
             } else {
                 type = "raw";
             }
         }
         assert1(type);
-        let value31;
+        let value;
         switch(type){
             case "form":
                 this.#type = "raw";
-                value31 = async ()=>new URLSearchParams(decoder3.decode(await this.#valuePromise()).replace(/\+/g, " "))
-                ;
+                value = async ()=>new URLSearchParams(decoder3.decode(await this.#valuePromise()).replace(/\+/g, " "));
                 break;
             case "form-data":
                 this.#type = "form-data";
-                value31 = ()=>{
-                    const contentType5 = this.#headers.get("content-type");
-                    assert1(contentType5);
-                    return this.#formDataReader ?? (this.#formDataReader = new FormDataReader(contentType5, this.#body));
+                value = ()=>{
+                    const contentType = this.#headers.get("content-type");
+                    assert1(contentType);
+                    return this.#formDataReader ?? (this.#formDataReader = new FormDataReader(contentType, this.#body));
                 };
                 break;
             case "json":
                 this.#type = "raw";
-                value31 = async ()=>JSON.parse(decoder3.decode(await this.#valuePromise()))
-                ;
+                value = async ()=>JSON.parse(decoder3.decode(await this.#valuePromise()));
                 break;
             case "raw":
                 this.#type = "raw";
-                value31 = ()=>this.#valuePromise()
-                ;
+                value = ()=>this.#valuePromise();
                 break;
             case "text":
                 this.#type = "raw";
-                value31 = async ()=>decoder3.decode(await this.#valuePromise())
-                ;
+                value = async ()=>decoder3.decode(await this.#valuePromise());
                 break;
             default:
                 throw new TypeError(`Invalid body type: "${type}"`);
@@ -13954,7 +13863,7 @@ class RequestBody {
         return {
             type,
             get value () {
-                return value31();
+                return value();
             }
         };
     }
@@ -13969,25 +13878,25 @@ function isQuality(spec) {
     return spec.q > 0;
 }
 const SIMPLE_CHARSET_REGEXP = /^\s*([^\s;]+)\s*(?:;(.*))?$/;
-function parseCharset(str16, i) {
-    const match = SIMPLE_CHARSET_REGEXP.exec(str16);
+function parseCharset(str, i) {
+    const match = SIMPLE_CHARSET_REGEXP.exec(str);
     if (!match) {
         return;
     }
-    const [, charset2] = match;
+    const [, charset] = match;
     let q = 1;
     if (match[2]) {
         const params = match[2].split(";");
         for (const param of params){
-            const [key18, value32] = param.trim().split("=");
-            if (key18 === "q") {
-                q = parseFloat(value32);
+            const [key, value] = param.trim().split("=");
+            if (key === "q") {
+                q = parseFloat(value);
                 break;
             }
         }
     }
     return {
-        charset: charset2,
+        charset,
         q,
         i
     };
@@ -13996,16 +13905,16 @@ function parseAcceptCharset(accept) {
     const accepts = accept.split(",");
     const result = [];
     for(let i = 0; i < accepts.length; i++){
-        const charset3 = parseCharset(accepts[i].trim(), i);
-        if (charset3) {
-            result.push(charset3);
+        const charset = parseCharset(accepts[i].trim(), i);
+        if (charset) {
+            result.push(charset);
         }
     }
     return result;
 }
-function specify(charset4, spec, i) {
+function specify(charset, spec, i) {
     let s = 0;
-    if (spec.charset.toLowerCase() === charset4.toLocaleLowerCase()) {
+    if (spec.charset.toLowerCase() === charset.toLocaleLowerCase()) {
         s |= 1;
     } else if (spec.charset !== "*") {
         return;
@@ -14017,7 +13926,7 @@ function specify(charset4, spec, i) {
         s
     };
 }
-function getCharsetPriority(charset5, accepted, index) {
+function getCharsetPriority(charset, accepted, index) {
     let priority = {
         i: -1,
         o: -1,
@@ -14025,7 +13934,7 @@ function getCharsetPriority(charset5, accepted, index) {
         s: 0
     };
     for (const accepts of accepted){
-        const spec = specify(charset5, accepts, index);
+        const spec = specify(charset, accepts, index);
         if (spec && ((priority.s ?? 0) - (spec.s ?? 0) || priority.q - spec.q || (priority.o ?? 0) - (spec.o ?? 0)) < 0) {
             priority = spec;
         }
@@ -14035,17 +13944,14 @@ function getCharsetPriority(charset5, accepted, index) {
 function preferredCharsets(accept = "*", provided) {
     const accepts = parseAcceptCharset(accept);
     if (!provided) {
-        return accepts.filter(isQuality).sort(compareSpecs).map((spec)=>spec.charset
-        );
+        return accepts.filter(isQuality).sort(compareSpecs).map((spec)=>spec.charset);
     }
-    const priorities = provided.map((type, index)=>getCharsetPriority(type, accepts, index)
-    );
-    return priorities.filter(isQuality).sort(compareSpecs).map((priority)=>provided[priorities.indexOf(priority)]
-    );
+    const priorities = provided.map((type, index)=>getCharsetPriority(type, accepts, index));
+    return priorities.filter(isQuality).sort(compareSpecs).map((priority)=>provided[priorities.indexOf(priority)]);
 }
 const simpleEncodingRegExp = /^\s*([^\s;]+)\s*(?:;(.*))?$/;
-function parseEncoding(str17, i) {
-    const match = simpleEncodingRegExp.exec(str17);
+function parseEncoding(str, i) {
+    const match = simpleEncodingRegExp.exec(str);
     if (!match) {
         return undefined;
     }
@@ -14124,17 +14030,14 @@ function getEncodingPriority(encoding, accepted, index) {
 function preferredEncodings(accept, provided) {
     const accepts = parseAcceptEncoding(accept);
     if (!provided) {
-        return accepts.filter(isQuality).sort(compareSpecs).map((spec)=>spec.encoding
-        );
+        return accepts.filter(isQuality).sort(compareSpecs).map((spec)=>spec.encoding);
     }
-    const priorities = provided.map((type, index)=>getEncodingPriority(type, accepts, index)
-    );
-    return priorities.filter(isQuality).sort(compareSpecs).map((priority)=>provided[priorities.indexOf(priority)]
-    );
+    const priorities = provided.map((type, index)=>getEncodingPriority(type, accepts, index));
+    return priorities.filter(isQuality).sort(compareSpecs).map((priority)=>provided[priorities.indexOf(priority)]);
 }
 const SIMPLE_LANGUAGE_REGEXP = /^\s*([^\s\-;]+)(?:-([^\s;]+))?\s*(?:;(.*))?$/;
-function parseLanguage(str18, i) {
-    const match = SIMPLE_LANGUAGE_REGEXP.exec(str18);
+function parseLanguage(str, i) {
+    const match = SIMPLE_LANGUAGE_REGEXP.exec(str);
     if (!match) {
         return undefined;
     }
@@ -14144,9 +14047,9 @@ function parseLanguage(str18, i) {
     if (match[3]) {
         const params = match[3].split(";");
         for (const param of params){
-            const [key19, value33] = param.trim().split("=");
-            if (key19 === "q") {
-                q = parseFloat(value33);
+            const [key, value] = param.trim().split("=");
+            if (key === "q") {
+                q = parseFloat(value);
                 break;
             }
         }
@@ -14210,19 +14113,16 @@ function getLanguagePriority(language, accepted, index) {
 function preferredLanguages(accept = "*", provided) {
     const accepts = parseAcceptLanguage(accept);
     if (!provided) {
-        return accepts.filter(isQuality).sort(compareSpecs).map((spec)=>spec.full
-        );
+        return accepts.filter(isQuality).sort(compareSpecs).map((spec)=>spec.full);
     }
-    const priorities = provided.map((type, index)=>getLanguagePriority(type, accepts, index)
-    );
-    return priorities.filter(isQuality).sort(compareSpecs).map((priority)=>provided[priorities.indexOf(priority)]
-    );
+    const priorities = provided.map((type, index)=>getLanguagePriority(type, accepts, index));
+    return priorities.filter(isQuality).sort(compareSpecs).map((priority)=>provided[priorities.indexOf(priority)]);
 }
 const simpleMediaTypeRegExp = /^\s*([^\s\/;]+)\/([^;\s]+)\s*(?:;(.*))?$/;
-function quoteCount(str19) {
+function quoteCount(str) {
     let count = 0;
     let index = 0;
-    while((index = str19.indexOf(`"`, index)) !== -1){
+    while((index = str.indexOf(`"`, index)) !== -1){
         count++;
         index++;
     }
@@ -14241,8 +14141,8 @@ function splitMediaTypes(accept) {
     accepts.length = j + 1;
     return accepts;
 }
-function splitParameters(str20) {
-    const parameters = str20.split(";");
+function splitParameters(str) {
+    const parameters = str.split(";");
     let j = 0;
     for(let i = 1; i < parameters.length; i++){
         if (quoteCount(parameters[j]) % 2 === 0) {
@@ -14252,18 +14152,17 @@ function splitParameters(str20) {
         }
     }
     parameters.length = j + 1;
-    return parameters.map((p)=>p.trim()
-    );
+    return parameters.map((p)=>p.trim());
 }
-function splitKeyValuePair(str21) {
-    const [key20, value34] = str21.split("=");
+function splitKeyValuePair(str) {
+    const [key, value] = str.split("=");
     return [
-        key20.toLowerCase(),
-        value34
+        key.toLowerCase(),
+        value
     ];
 }
-function parseMediaType(str22, i) {
-    const match = simpleMediaTypeRegExp.exec(str22);
+function parseMediaType(str, i) {
+    const match = simpleMediaTypeRegExp.exec(str);
     if (!match) {
         return;
     }
@@ -14272,13 +14171,13 @@ function parseMediaType(str22, i) {
     const [, type, subtype, parameters] = match;
     if (parameters) {
         const kvps = splitParameters(parameters).map(splitKeyValuePair);
-        for (const [key21, val] of kvps){
-            const value35 = val && val[0] === `"` && val[val.length - 1] === `"` ? val.substr(1, val.length - 2) : val;
-            if (key21 === "q" && value35) {
-                q = parseFloat(value35);
+        for (const [key, val] of kvps){
+            const value = val && val[0] === `"` && val[val.length - 1] === `"` ? val.substr(1, val.length - 2) : val;
+            if (key === "q" && value) {
+                q = parseFloat(value);
                 break;
             }
-            params[key21] = value35;
+            params[key] = value;
         }
     }
     return {
@@ -14321,8 +14220,7 @@ function specify3(type, spec, index) {
     }
     const keys = Object.keys(spec.params);
     if (keys.length) {
-        if (keys.every((key22)=>(spec.params[key22] || "").toLowerCase() === (p.params[key22] || "").toLowerCase()
-        )) {
+        if (keys.every((key)=>(spec.params[key] || "").toLowerCase() === (p.params[key] || "").toLowerCase())) {
             s |= 1;
         } else {
             return;
@@ -14358,8 +14256,7 @@ function preferredMediaTypes(accept, provided) {
     const priorities = provided.map((type, index)=>{
         return getMediaTypePriority(type, accepts, index);
     });
-    return priorities.filter(isQuality).sort(compareSpecs).map((priority)=>provided[priorities.indexOf(priority)]
-    );
+    return priorities.filter(isQuality).sort(compareSpecs).map((priority)=>provided[priorities.indexOf(priority)]);
 }
 new TextDecoder();
 class Request {
@@ -14396,7 +14293,7 @@ class Request {
             let host;
             if (this.#proxy) {
                 proto = serverRequest.headers.get("x-forwarded-proto")?.split(/\s*,\s*/, 1)[0] ?? "http";
-                host = (serverRequest.headers.get("x-forwarded-host") ?? serverRequest.headers.get("host")) ?? "";
+                host = serverRequest.headers.get("x-forwarded-host") ?? serverRequest.headers.get("host") ?? "";
             } else {
                 proto = this.#secure ? "https" : "http";
                 host = serverRequest.headers.get("host") ?? "";
@@ -14411,13 +14308,13 @@ class Request {
         this.#serverRequest = serverRequest;
         this.#body = new RequestBody(serverRequest);
     }
-    accepts(...types3) {
+    accepts(...types) {
         const acceptValue = this.#serverRequest.headers.get("Accept");
         if (!acceptValue) {
             return;
         }
-        if (types3.length) {
-            return preferredMediaTypes(acceptValue, types3)[0];
+        if (types.length) {
+            return preferredMediaTypes(acceptValue, types)[0];
         }
         return preferredMediaTypes(acceptValue);
     }
@@ -14464,8 +14361,8 @@ const BODY_TYPES = [
     "symbol"
 ];
 const encoder2 = new TextEncoder();
-function isReader(value36) {
-    return value36 && typeof value36 === "object" && "read" in value36 && typeof value36.read === "function";
+function isReader(value) {
+    return value && typeof value === "object" && "read" in value && typeof value.read === "function";
 }
 async function convertBody(body, type) {
     let result;
@@ -14479,8 +14376,8 @@ async function convertBody(body, type) {
         result = encoder2.encode(JSON.stringify(body));
         type = type ?? "json";
     } else if (typeof body === "function") {
-        const result = body.call(null);
-        return convertBody(await result, type);
+        const result1 = body.call(null);
+        return convertBody(await result1, type);
     } else if (body) {
         throw new TypeError("Response body was set but could not convert.");
     }
@@ -14514,20 +14411,20 @@ class Response {
     get body() {
         return this.#body;
     }
-    set body(value37) {
+    set body(value) {
         if (!this.#writable) {
             throw new Error("The response is not writable.");
         }
-        this.#body = value37;
+        this.#body = value;
     }
     get headers() {
         return this.#headers;
     }
-    set headers(value38) {
+    set headers(value) {
         if (!this.#writable) {
             throw new Error("The response is not writable.");
         }
-        this.#headers = value38;
+        this.#headers = value;
     }
     get status() {
         if (this.#status) {
@@ -14536,20 +14433,20 @@ class Response {
         const typeofbody = typeof this.body;
         return this.body && (BODY_TYPES.includes(typeofbody) || typeofbody === "object") ? Status.OK : Status.NotFound;
     }
-    set status(value39) {
+    set status(value) {
         if (!this.#writable) {
             throw new Error("The response is not writable.");
         }
-        this.#status = value39;
+        this.#status = value;
     }
     get type() {
         return this.#type;
     }
-    set type(value40) {
+    set type(value) {
         if (!this.#writable) {
             throw new Error("The response is not writable.");
         }
-        this.#type = value40;
+        this.#type = value;
     }
     get writable() {
         return this.#writable;
@@ -14605,8 +14502,8 @@ class Response {
         };
     }
 }
-function isHidden(path35) {
-    const pathArr = path35.split("/");
+function isHidden(path) {
+    const pathArr = path.split("/");
     for (const segment of pathArr){
         if (segment[0] === "." && segment !== "." && segment !== "..") {
             return true;
@@ -14614,56 +14511,56 @@ function isHidden(path35) {
         return false;
     }
 }
-async function exists(path36) {
+async function exists(path) {
     try {
-        return (await Deno.stat(path36)).isFile;
+        return (await Deno.stat(path)).isFile;
     } catch  {
         return false;
     }
 }
-async function send({ request , response: response3  }, path37, options = {
+async function send({ request , response  }, path, options = {
     root: ""
 }) {
-    const { brotli =true , extensions: extensions2 , format: format4 = true , gzip =true , hidden =false , immutable =false , index , maxage =0 , root ,  } = options;
-    const trailingSlash = path37[path37.length - 1] === "/";
-    path37 = decodeComponent(path37.substr(parse2(path37).root.length));
+    const { brotli =true , extensions , format =true , gzip =true , hidden =false , immutable =false , index , maxage =0 , root  } = options;
+    const trailingSlash = path[path.length - 1] === "/";
+    path = decodeComponent(path.substr(parse2(path).root.length));
     if (index && trailingSlash) {
-        path37 += index;
+        path += index;
     }
-    if (!hidden && isHidden(path37)) {
+    if (!hidden && isHidden(path)) {
         throw createHttpError(403);
     }
-    path37 = resolvePath(root, path37);
+    path = resolvePath(root, path);
     let encodingExt = "";
-    if (brotli && request.acceptsEncodings("br", "identity") === "br" && await exists(`${path37}.br`)) {
-        path37 = `${path37}.br`;
-        response3.headers.set("Content-Encoding", "br");
-        response3.headers.delete("Content-Length");
+    if (brotli && request.acceptsEncodings("br", "identity") === "br" && await exists(`${path}.br`)) {
+        path = `${path}.br`;
+        response.headers.set("Content-Encoding", "br");
+        response.headers.delete("Content-Length");
         encodingExt = ".br";
-    } else if (gzip && request.acceptsEncodings("gzip", "identity") === "gzip" && await exists(`${path37}.gz`)) {
-        path37 = `${path37}.gz`;
-        response3.headers.set("Content-Encoding", "gzip");
-        response3.headers.delete("Content-Length");
+    } else if (gzip && request.acceptsEncodings("gzip", "identity") === "gzip" && await exists(`${path}.gz`)) {
+        path = `${path}.gz`;
+        response.headers.set("Content-Encoding", "gzip");
+        response.headers.delete("Content-Length");
         encodingExt = ".gz";
     }
-    if (extensions2 && !/\.[^/]*$/.exec(path37)) {
-        for (let ext of extensions2){
+    if (extensions && !/\.[^/]*$/.exec(path)) {
+        for (let ext of extensions){
             if (!/^\./.exec(ext)) {
                 ext = `.${ext}`;
             }
-            if (await exists(`${path37}${ext}`)) {
-                path37 += ext;
+            if (await exists(`${path}${ext}`)) {
+                path += ext;
                 break;
             }
         }
     }
     let stats;
     try {
-        stats = await Deno.stat(path37);
+        stats = await Deno.stat(path);
         if (stats.isDirectory) {
-            if (format4 && index) {
-                path37 += `/${index}`;
-                stats = await Deno.stat(path37);
+            if (format && index) {
+                path += `/${index}`;
+                stats = await Deno.stat(path);
             } else {
                 return;
             }
@@ -14674,28 +14571,28 @@ async function send({ request , response: response3  }, path37, options = {
         }
         throw createHttpError(500, err.message);
     }
-    response3.headers.set("Content-Length", String(stats.size));
-    if (!response3.headers.has("Last-Modified") && stats.mtime) {
-        response3.headers.set("Last-Modified", stats.mtime.toUTCString());
+    response.headers.set("Content-Length", String(stats.size));
+    if (!response.headers.has("Last-Modified") && stats.mtime) {
+        response.headers.set("Last-Modified", stats.mtime.toUTCString());
     }
-    if (!response3.headers.has("Cache-Control")) {
+    if (!response.headers.has("Cache-Control")) {
         const directives = [
             `max-age=${maxage / 1000 | 0}`
         ];
         if (immutable) {
             directives.push("immutable");
         }
-        response3.headers.set("Cache-Control", directives.join(","));
+        response.headers.set("Cache-Control", directives.join(","));
     }
-    if (!response3.type) {
-        response3.type = encodingExt !== "" ? extname2(basename2(path37, encodingExt)) : extname2(path37);
+    if (!response.type) {
+        response.type = encodingExt !== "" ? extname2(basename2(path, encodingExt)) : extname2(path);
     }
-    const file = await Deno.open(path37, {
+    const file = await Deno.open(path, {
         read: true
     });
-    response3.addResource(file.rid);
-    response3.body = file;
-    return path37;
+    response.addResource(file.rid);
+    response.body = file;
+    return path;
 }
 const encoder3 = new TextEncoder();
 class CloseEvent extends Event {
@@ -14707,11 +14604,11 @@ class ServerSentEvent extends Event {
     #data;
     #id;
     #type;
-    constructor(type, data, { replacer: replacer1 , space , ...eventInit } = {}){
+    constructor(type, data, { replacer , space , ...eventInit } = {}){
         super(type, eventInit);
         this.#type = type;
         try {
-            this.#data = typeof data === "string" ? data : JSON.stringify(data, replacer1, space);
+            this.#data = typeof data === "string" ? data : JSON.stringify(data, replacer, space);
         } catch (e) {
             assert1(e instanceof Error);
             throw new TypeError(`data could not be coerced into a serialized string.\n  ${e.message}`);
@@ -14747,7 +14644,7 @@ const responseHeaders = new Headers([
     [
         "Keep-Alive",
         `timeout=${Number.MAX_SAFE_INTEGER}`
-    ], 
+    ]
 ]);
 class ServerSentEventTarget extends EventTarget {
     #app;
@@ -14782,13 +14679,13 @@ class ServerSentEventTarget extends EventTarget {
     #setup = async (overrideHeaders)=>{
         const headers = new Headers(responseHeaders);
         if (overrideHeaders) {
-            for (const [key23, value41] of overrideHeaders){
-                headers.set(key23, value41);
+            for (const [key, value] of overrideHeaders){
+                headers.set(key, value);
             }
         }
         let payload = response;
-        for (const [key24, value42] of headers){
-            payload += `${key24}: ${value42}\n`;
+        for (const [key1, value1] of headers){
+            payload += `${key1}: ${value1}\n`;
         }
         payload += `\n`;
         try {
@@ -14892,8 +14789,8 @@ class Context {
         throw err;
     }
     send(options) {
-        const { path: path38 = this.request.url.pathname , ...sendOptions } = options;
-        return send(this, path38, sendOptions);
+        const { path =this.request.url.pathname , ...sendOptions } = options;
+        return send(this, path, sendOptions);
     }
     sendEvents(options) {
         if (this.#sse) {
@@ -14937,10 +14834,10 @@ function compareArrayBuffer(a, b) {
     return out === 0;
 }
 function compare(a, b) {
-    const key25 = new Uint8Array(32);
-    globalThis.crypto.getRandomValues(key25);
-    const ah = new HmacSha256(key25).update(a).arrayBuffer();
-    const bh = new HmacSha256(key25).update(b).arrayBuffer();
+    const key = new Uint8Array(32);
+    globalThis.crypto.getRandomValues(key);
+    const ah = new HmacSha256(key).update(a).arrayBuffer();
+    const bh = new HmacSha256(key).update(b).arrayBuffer();
     return compareArrayBuffer(ah, bh);
 }
 const replacements = {
@@ -14956,9 +14853,8 @@ class KeyStack {
         }
         this.#keys = keys;
     }
-    #sign = (data, key26)=>{
-        return btoa(String.fromCharCode.apply(undefined, new Uint8Array(new HmacSha256(key26).update(data).arrayBuffer()))).replace(/\/|\+|=/g, (c)=>replacements[c]
-        );
+    #sign = (data, key)=>{
+        return btoa(String.fromCharCode.apply(undefined, new Uint8Array(new HmacSha256(key).update(data).arrayBuffer()))).replace(/\/|\+|=/g, (c)=>replacements[c]);
     };
     sign(data) {
         return this.#sign(data, this.#keys[0]);
@@ -15040,11 +14936,11 @@ class Application extends EventTarget {
     state;
     constructor(options = {}){
         super();
-        const { state , keys , proxy , serve: serve2 = serve , serveTls =serveTLS ,  } = options;
+        const { state , keys , proxy , serve: serve1 = serve , serveTls =serveTLS  } = options;
         this.proxy = proxy ?? false;
         this.keys = keys;
         this.state = state ?? {};
-        this.#serve = serve2;
+        this.#serve = serve1;
         this.#serveTls = serveTls;
     }
     #getComposed = ()=>{
@@ -15066,12 +14962,12 @@ class Application extends EventTarget {
         if (!context.response.writable) {
             return;
         }
-        for (const key27 of context.response.headers.keys()){
-            context.response.headers.delete(key27);
+        for (const key of context.response.headers.keys()){
+            context.response.headers.delete(key);
         }
         if (error.headers && error.headers instanceof Headers) {
-            for (const [key28, value43] of error.headers){
-                context.response.headers.set(key28, value43);
+            for (const [key1, value] of error.headers){
+                context.response.headers.set(key1, value);
             }
         }
         context.response.type = "text";
@@ -15080,9 +14976,8 @@ class Application extends EventTarget {
     };
     #handleRequest = async (request, secure, state)=>{
         const context = new Context(this, request, secure);
-        let resolve4;
-        const handlingPromise = new Promise((res)=>resolve4 = res
-        );
+        let resolve;
+        const handlingPromise = new Promise((res)=>resolve = res);
         state.handling.add(handlingPromise);
         if (!state.closing && !state.closed) {
             try {
@@ -15093,7 +14988,7 @@ class Application extends EventTarget {
         }
         if (context.respond === false) {
             context.response.destroy();
-            resolve4();
+            resolve();
             state.handling.delete(handlingPromise);
             return;
         }
@@ -15103,11 +14998,11 @@ class Application extends EventTarget {
                 state.server.close();
                 state.closed = true;
             }
-        } catch (err) {
-            this.#handleError(context, err);
+        } catch (err1) {
+            this.#handleError(context, err1);
         } finally{
             context.response.destroy();
-            resolve4();
+            resolve();
             state.handling.delete(handlingPromise);
         }
     };
@@ -15129,9 +15024,9 @@ class Application extends EventTarget {
             return;
         }
         try {
-            const response4 = await context.response.toServerResponse();
+            const response = await context.response.toServerResponse();
             context.response.destroy();
-            return response4;
+            return response;
         } catch (err1) {
             this.#handleError(context, err1);
             throw err1;
@@ -15169,9 +15064,9 @@ class Application extends EventTarget {
                 state.closing = true;
             });
         }
-        const { hostname , port , secure =false  } = options;
+        const { hostname: hostname1 , port , secure =false  } = options;
         this.dispatchEvent(new ApplicationListenEvent({
-            hostname,
+            hostname: hostname1,
             port,
             secure
         }));
@@ -15197,8 +15092,7 @@ class Application extends EventTarget {
 function toUrl(url, params = {}, options) {
     const tokens = parse3(url);
     let replace = {};
-    if (tokens.some((token)=>typeof token === "object"
-    )) {
+    if (tokens.some((token)=>typeof token === "object")) {
         replace = params;
     } else {
         options = params;
@@ -15206,13 +15100,13 @@ function toUrl(url, params = {}, options) {
     const toPath = compile(url, options);
     const replaced = toPath(replace);
     if (options && options.query) {
-        const url = new URL(replaced, "http://oak");
+        const url1 = new URL(replaced, "http://oak");
         if (typeof options.query === "string") {
-            url.search = options.query;
+            url1.search = options.query;
         } else {
-            url.search = String(options.query instanceof URLSearchParams ? options.query : new URLSearchParams(options.query));
+            url1.search = String(options.query instanceof URLSearchParams ? options.query : new URLSearchParams(options.query));
         }
-        return `${url.pathname}${url.search}${url.hash}`;
+        return `${url1.pathname}${url1.search}${url1.hash}`;
     }
     return replaced;
 }
@@ -15224,7 +15118,7 @@ class Layer {
     name;
     path;
     stack;
-    constructor(path39, methods, middleware, { name , ...opts } = {}){
+    constructor(path, methods, middleware, { name , ...opts } = {}){
         this.#opts = opts;
         this.name = name;
         this.methods = [
@@ -15236,11 +15130,11 @@ class Layer {
         this.stack = Array.isArray(middleware) ? middleware : [
             middleware
         ];
-        this.path = path39;
-        this.#regexp = pathToRegexp(path39, this.#paramNames, this.#opts);
+        this.path = path;
+        this.#regexp = pathToRegexp(path, this.#paramNames, this.#opts);
     }
-    match(path40) {
-        return this.#regexp.test(path40);
+    match(path) {
+        return this.#regexp.test(path);
     }
     params(captures, existingParams = {}) {
         const params = existingParams;
@@ -15252,11 +15146,11 @@ class Layer {
         }
         return params;
     }
-    captures(path41) {
+    captures(path) {
         if (this.#opts.ignoreCaptures) {
             return [];
         }
-        return path41.match(this.#regexp)?.slice(1) ?? [];
+        return path.match(this.#regexp)?.slice(1) ?? [];
     }
     url(params = {}, options) {
         const url = this.path.replace(/\(\.\*\)/g, "");
@@ -15271,13 +15165,12 @@ class Layer {
             return fn.call(this, p, ctx, next);
         };
         middleware.param = param;
-        const names = params.map((p)=>p.name
-        );
+        const names = params.map((p)=>p.name);
         const x = names.indexOf(param);
         if (x >= 0) {
             for(let i = 0; i < stack.length; i++){
-                const fn = stack[i];
-                if (!fn.param || names.indexOf(fn.param) > x) {
+                const fn1 = stack[i];
+                if (!fn1.param || names.indexOf(fn1.param) > x) {
                     stack.splice(i, 0, middleware);
                     break;
                 }
@@ -15301,8 +15194,7 @@ class Layer {
             middleware: [
                 ...this.stack
             ],
-            paramNames: this.#paramNames.map((key29)=>key29.name
-            ),
+            paramNames: this.#paramNames.map((key)=>key.name),
             path: this.path,
             regexp: this.#regexp,
             options: {
@@ -15316,14 +15208,14 @@ class Router {
     #methods;
     #params = {};
     #stack = [];
-    #match = (path42, method)=>{
+    #match = (path, method)=>{
         const matches = {
             path: [],
             pathAndMethod: [],
             route: false
         };
         for (const route of this.#stack){
-            if (route.match(path42)) {
+            if (route.match(path)) {
                 matches.path.push(route);
                 if (route.methods.length === 0 || route.methods.includes(method)) {
                     matches.pathAndMethod.push(route);
@@ -15335,19 +15227,19 @@ class Router {
         }
         return matches;
     };
-    #register = (path43, middleware, methods, options = {})=>{
-        if (Array.isArray(path43)) {
-            for (const p of path43){
+    #register = (path, middleware, methods, options = {})=>{
+        if (Array.isArray(path)) {
+            for (const p of path){
                 this.#register(p, middleware, methods, options);
             }
             return;
         }
         const { end , name , sensitive , strict , ignoreCaptures  } = options;
-        const route = new Layer(path43, methods, middleware, {
+        const route = new Layer(path, methods, middleware, {
             end: end === false ? end : true,
             name,
-            sensitive: (sensitive ?? this.#opts.sensitive) ?? false,
-            strict: (strict ?? this.#opts.strict) ?? false,
+            sensitive: sensitive ?? this.#opts.sensitive ?? false,
+            strict: strict ?? this.#opts.strict ?? false,
             ignoreCaptures
         });
         if (this.#opts.prefix) {
@@ -15367,15 +15259,15 @@ class Router {
     };
     #useVerb = (nameOrPath, pathOrMiddleware, middleware, methods)=>{
         let name = undefined;
-        let path44;
+        let path;
         if (typeof pathOrMiddleware === "string") {
             name = nameOrPath;
-            path44 = pathOrMiddleware;
+            path = pathOrMiddleware;
         } else {
-            path44 = nameOrPath;
+            path = nameOrPath;
             middleware.unshift(pathOrMiddleware);
         }
-        this.#register(path44, middleware, methods, {
+        this.#register(path, middleware, methods, {
             name
         });
     };
@@ -15388,7 +15280,7 @@ class Router {
             "OPTIONS",
             "PATCH",
             "POST",
-            "PUT", 
+            "PUT"
         ];
     }
     all(nameOrPath, pathOrMiddleware, ...middleware) {
@@ -15448,17 +15340,17 @@ class Router {
     }
     *entries() {
         for (const route of this.#stack){
-            const value44 = route.toJSON();
+            const value = route.toJSON();
             yield [
-                value44,
-                value44
+                value,
+                value
             ];
         }
     }
     forEach(callback, thisArg = null) {
         for (const route of this.#stack){
-            const value45 = route.toJSON();
-            callback.call(thisArg, value45, value45, this);
+            const value = route.toJSON();
+            callback.call(thisArg, value, value, this);
         }
     }
     get(nameOrPath, pathOrMiddleware, ...middleware) {
@@ -15539,33 +15431,32 @@ class Router {
         return this;
     }
     routes() {
-        const dispatch = (context, next1)=>{
-            const ctx1 = context;
-            const { url: { pathname  } , method  } = ctx1.request;
-            const path45 = (this.#opts.routerPath ?? ctx1.routerPath) ?? decodeURIComponent(pathname);
-            const matches = this.#match(path45, method);
-            if (ctx1.matched) {
-                ctx1.matched.push(...matches.path);
+        const dispatch = (context, next)=>{
+            const ctx = context;
+            const { url: { pathname  } , method  } = ctx.request;
+            const path = this.#opts.routerPath ?? ctx.routerPath ?? decodeURIComponent(pathname);
+            const matches = this.#match(path, method);
+            if (ctx.matched) {
+                ctx.matched.push(...matches.path);
             } else {
-                ctx1.matched = [
+                ctx.matched = [
                     ...matches.path
                 ];
             }
-            ctx1.router = this;
-            if (!matches.route) return next1();
+            ctx.router = this;
+            if (!matches.route) return next();
             const { pathAndMethod: matchedRoutes  } = matches;
             const chain = matchedRoutes.reduce((prev, route)=>[
                     ...prev,
                     (ctx, next)=>{
-                        ctx.captures = route.captures(path45);
+                        ctx.captures = route.captures(path);
                         ctx.params = route.params(ctx.captures, ctx.params);
                         ctx.routeName = route.name;
                         return next();
                     },
-                    ...route.stack, 
-                ]
-            , []);
-            return compose(chain)(ctx1, next1);
+                    ...route.stack
+                ], []);
+            return compose(chain)(ctx, next);
         };
         dispatch.router = this;
         return dispatch;
@@ -15577,15 +15468,15 @@ class Router {
         }
     }
     use(pathOrMiddleware, ...middleware) {
-        let path46;
+        let path;
         if (typeof pathOrMiddleware === "string" || Array.isArray(pathOrMiddleware)) {
-            path46 = pathOrMiddleware;
+            path = pathOrMiddleware;
         } else {
             middleware.unshift(pathOrMiddleware);
         }
-        this.#register(path46 ?? "(.*)", middleware, [], {
+        this.#register(path ?? "(.*)", middleware, [], {
             end: false,
-            ignoreCaptures: !path46
+            ignoreCaptures: !path
         });
         return this;
     }
@@ -15599,15 +15490,15 @@ class Router {
             yield route.toJSON();
         }
     }
-    static url(path47, params, options) {
-        return toUrl(path47, params, options);
+    static url(path, params, options) {
+        return toUrl(path, params, options);
     }
 }
 function deferred1() {
     let methods;
-    const promise = new Promise((resolve5, reject)=>{
+    const promise = new Promise((resolve, reject)=>{
         methods = {
-            resolve: resolve5,
+            resolve,
             reject
         };
     });
@@ -15624,13 +15515,13 @@ class MuxAsyncIterator1 {
     }
     async callIteratorNext(iterator) {
         try {
-            const { value: value46 , done  } = await iterator.next();
+            const { value , done  } = await iterator.next();
             if (done) {
                 --this.iteratorCount;
             } else {
                 this.yields.push({
                     iterator,
-                    value: value46
+                    value
                 });
             }
         } catch (e) {
@@ -15642,8 +15533,8 @@ class MuxAsyncIterator1 {
         while(this.iteratorCount > 0){
             await this.signal;
             for(let i = 0; i < this.yields.length; i++){
-                const { iterator , value: value47  } = this.yields[i];
-                yield value47;
+                const { iterator , value  } = this.yields[i];
+                yield value;
                 this.callIteratorNext(iterator);
             }
             if (this.throws.length) {
@@ -15663,13 +15554,13 @@ class MuxAsyncIterator1 {
 globalThis.Deno?.noColor ?? true;
 new RegExp([
     "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
-    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))", 
+    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))"
 ].join("|"), "g");
 var DiffType1;
-(function(DiffType3) {
-    DiffType3["removed"] = "removed";
-    DiffType3["common"] = "common";
-    DiffType3["added"] = "added";
+(function(DiffType) {
+    DiffType["removed"] = "removed";
+    DiffType["common"] = "common";
+    DiffType["added"] = "added";
 })(DiffType1 || (DiffType1 = {}));
 class DenoStdInternalError1 extends Error {
     constructor(message){
@@ -15688,23 +15579,19 @@ async function writeAll(w, arr) {
         nwritten += await w.write(arr.subarray(nwritten));
     }
 }
-function writeAllSync(w, arr) {
-    let nwritten = 0;
-    while(nwritten < arr.length){
-        nwritten += w.writeSync(arr.subarray(nwritten));
+TextDecoder;
+TextEncoder;
+function validateIntegerRange(value, name, min = -2147483648, max = 2147483647) {
+    if (!Number.isInteger(value)) {
+        throw new Error(`${name} must be 'an integer' but was ${value}`);
+    }
+    if (value < min || value > max) {
+        throw new Error(`${name} must be >= ${min} && <= ${max}. Value was ${value}`);
     }
 }
-function validateIntegerRange(value48, name, min = -2147483648, max = 2147483647) {
-    if (!Number.isInteger(value48)) {
-        throw new Error(`${name} must be 'an integer' but was ${value48}`);
-    }
-    if (value48 < min || value48 > max) {
-        throw new Error(`${name} must be >= ${min} && <= ${max}. Value was ${value48}`);
-    }
-}
-function createIterResult(value49, done) {
+function createIterResult(value, done) {
     return {
-        value: value49,
+        value,
         done
     };
 }
@@ -15715,8 +15602,8 @@ class EventEmitter {
     static get defaultMaxListeners() {
         return defaultMaxListeners;
     }
-    static set defaultMaxListeners(value50) {
-        defaultMaxListeners = value50;
+    static set defaultMaxListeners(value) {
+        defaultMaxListeners = value;
     }
     maxListeners;
     _events;
@@ -15858,8 +15745,8 @@ class EventEmitter {
             }
         } else {
             const eventList = this.eventNames();
-            eventList.map((value51)=>{
-                this.removeAllListeners(value51);
+            eventList.map((value)=>{
+                this.removeAllListeners(value);
             });
         }
         return this;
@@ -15897,10 +15784,10 @@ class EventEmitter {
         return this;
     }
     static once(emitter, name) {
-        return new Promise((resolve6, reject)=>{
+        return new Promise((resolve, reject)=>{
             if (emitter instanceof EventTarget) {
                 emitter.addEventListener(name, (...args)=>{
-                    resolve6(args);
+                    resolve(args);
                 }, {
                     once: true,
                     passive: false,
@@ -15912,7 +15799,7 @@ class EventEmitter {
                     if (errorListener !== undefined) {
                         emitter.removeListener("error", errorListener);
                     }
-                    resolve6(args);
+                    resolve(args);
                 };
                 let errorListener;
                 if (name !== "error") {
@@ -15934,9 +15821,9 @@ class EventEmitter {
         let finished = false;
         const iterator = {
             next () {
-                const value52 = unconsumedEventValues.shift();
-                if (value52) {
-                    return Promise.resolve(createIterResult(value52, false));
+                const value = unconsumedEventValues.shift();
+                if (value) {
+                    return Promise.resolve(createIterResult(value, false));
                 }
                 if (error) {
                     const p = Promise.reject(error);
@@ -15946,9 +15833,9 @@ class EventEmitter {
                 if (finished) {
                     return Promise.resolve(createIterResult(undefined, true));
                 }
-                return new Promise(function(resolve7, reject) {
+                return new Promise(function(resolve, reject) {
                     unconsumedPromises.push({
-                        resolve: resolve7,
+                        resolve,
                         reject
                     });
                 });
@@ -16101,10 +15988,10 @@ class BufReader2 {
         if (p.byteLength === 0) return rr;
         if (this.r === this.w) {
             if (p.byteLength >= this.buf.byteLength) {
-                const rr = await this.rd.read(p);
-                const nread = rr ?? 0;
+                const rr1 = await this.rd.read(p);
+                const nread = rr1 ?? 0;
                 assert2(nread >= 0, "negative read");
-                return rr;
+                return rr1;
             }
             this.r = 0;
             this.w = 0;
@@ -16326,63 +16213,6 @@ class BufWriter1 extends AbstractBufBase1 {
     }
     writer;
 }
-class BufWriterSync1 extends AbstractBufBase1 {
-    static create(writer, size = 4096) {
-        return writer instanceof BufWriterSync1 ? writer : new BufWriterSync1(writer, size);
-    }
-    constructor(writer, size = 4096){
-        super();
-        this.writer = writer;
-        if (size <= 0) {
-            size = DEFAULT_BUF_SIZE1;
-        }
-        this.buf = new Uint8Array(size);
-    }
-    reset(w) {
-        this.err = null;
-        this.usedBufferBytes = 0;
-        this.writer = w;
-    }
-    flush() {
-        if (this.err !== null) throw this.err;
-        if (this.usedBufferBytes === 0) return;
-        try {
-            writeAllSync(this.writer, this.buf.subarray(0, this.usedBufferBytes));
-        } catch (e) {
-            this.err = e;
-            throw e;
-        }
-        this.buf = new Uint8Array(this.buf.length);
-        this.usedBufferBytes = 0;
-    }
-    writeSync(data) {
-        if (this.err !== null) throw this.err;
-        if (data.length === 0) return 0;
-        let totalBytesWritten = 0;
-        let numBytesWritten = 0;
-        while(data.byteLength > this.available()){
-            if (this.buffered() === 0) {
-                try {
-                    numBytesWritten = this.writer.writeSync(data);
-                } catch (e) {
-                    this.err = e;
-                    throw e;
-                }
-            } else {
-                numBytesWritten = copy1(data, this.buf, this.usedBufferBytes);
-                this.usedBufferBytes += numBytesWritten;
-                this.flush();
-            }
-            totalBytesWritten += numBytesWritten;
-            data = data.subarray(numBytesWritten);
-        }
-        numBytesWritten = copy1(data, this.buf, this.usedBufferBytes);
-        this.usedBufferBytes += numBytesWritten;
-        totalBytesWritten += numBytesWritten;
-        return totalBytesWritten;
-    }
-    writer;
-}
 const decoder4 = new TextDecoder();
 const invalidHeaderCharRegex1 = /[^\t\x20-\x7e\x80-\xff]/g;
 function str1(buf) {
@@ -16427,17 +16257,17 @@ class TextProtoReader1 {
             if (i < 0) {
                 throw new Deno.errors.InvalidData(`malformed MIME header line: ${str1(kv)}`);
             }
-            const key30 = str1(kv.subarray(0, i));
-            if (key30 == "") {
+            const key = str1(kv.subarray(0, i));
+            if (key == "") {
                 continue;
             }
             i++;
             while(i < kv.byteLength && (kv[i] == charCode1(" ") || kv[i] == charCode1("\t"))){
                 i++;
             }
-            const value53 = str1(kv.subarray(i)).replace(invalidHeaderCharRegex1, encodeURI);
+            const value = str1(kv.subarray(i)).replace(invalidHeaderCharRegex1, encodeURI);
             try {
-                m.append(key30, value53);
+                m.append(key, value);
             } catch  {}
         }
     }
@@ -16473,69 +16303,69 @@ class TextProtoReader1 {
     r;
 }
 var Status1;
-(function(Status3) {
-    Status3[Status3["Continue"] = 100] = "Continue";
-    Status3[Status3["SwitchingProtocols"] = 101] = "SwitchingProtocols";
-    Status3[Status3["Processing"] = 102] = "Processing";
-    Status3[Status3["EarlyHints"] = 103] = "EarlyHints";
-    Status3[Status3["OK"] = 200] = "OK";
-    Status3[Status3["Created"] = 201] = "Created";
-    Status3[Status3["Accepted"] = 202] = "Accepted";
-    Status3[Status3["NonAuthoritativeInfo"] = 203] = "NonAuthoritativeInfo";
-    Status3[Status3["NoContent"] = 204] = "NoContent";
-    Status3[Status3["ResetContent"] = 205] = "ResetContent";
-    Status3[Status3["PartialContent"] = 206] = "PartialContent";
-    Status3[Status3["MultiStatus"] = 207] = "MultiStatus";
-    Status3[Status3["AlreadyReported"] = 208] = "AlreadyReported";
-    Status3[Status3["IMUsed"] = 226] = "IMUsed";
-    Status3[Status3["MultipleChoices"] = 300] = "MultipleChoices";
-    Status3[Status3["MovedPermanently"] = 301] = "MovedPermanently";
-    Status3[Status3["Found"] = 302] = "Found";
-    Status3[Status3["SeeOther"] = 303] = "SeeOther";
-    Status3[Status3["NotModified"] = 304] = "NotModified";
-    Status3[Status3["UseProxy"] = 305] = "UseProxy";
-    Status3[Status3["TemporaryRedirect"] = 307] = "TemporaryRedirect";
-    Status3[Status3["PermanentRedirect"] = 308] = "PermanentRedirect";
-    Status3[Status3["BadRequest"] = 400] = "BadRequest";
-    Status3[Status3["Unauthorized"] = 401] = "Unauthorized";
-    Status3[Status3["PaymentRequired"] = 402] = "PaymentRequired";
-    Status3[Status3["Forbidden"] = 403] = "Forbidden";
-    Status3[Status3["NotFound"] = 404] = "NotFound";
-    Status3[Status3["MethodNotAllowed"] = 405] = "MethodNotAllowed";
-    Status3[Status3["NotAcceptable"] = 406] = "NotAcceptable";
-    Status3[Status3["ProxyAuthRequired"] = 407] = "ProxyAuthRequired";
-    Status3[Status3["RequestTimeout"] = 408] = "RequestTimeout";
-    Status3[Status3["Conflict"] = 409] = "Conflict";
-    Status3[Status3["Gone"] = 410] = "Gone";
-    Status3[Status3["LengthRequired"] = 411] = "LengthRequired";
-    Status3[Status3["PreconditionFailed"] = 412] = "PreconditionFailed";
-    Status3[Status3["RequestEntityTooLarge"] = 413] = "RequestEntityTooLarge";
-    Status3[Status3["RequestURITooLong"] = 414] = "RequestURITooLong";
-    Status3[Status3["UnsupportedMediaType"] = 415] = "UnsupportedMediaType";
-    Status3[Status3["RequestedRangeNotSatisfiable"] = 416] = "RequestedRangeNotSatisfiable";
-    Status3[Status3["ExpectationFailed"] = 417] = "ExpectationFailed";
-    Status3[Status3["Teapot"] = 418] = "Teapot";
-    Status3[Status3["MisdirectedRequest"] = 421] = "MisdirectedRequest";
-    Status3[Status3["UnprocessableEntity"] = 422] = "UnprocessableEntity";
-    Status3[Status3["Locked"] = 423] = "Locked";
-    Status3[Status3["FailedDependency"] = 424] = "FailedDependency";
-    Status3[Status3["TooEarly"] = 425] = "TooEarly";
-    Status3[Status3["UpgradeRequired"] = 426] = "UpgradeRequired";
-    Status3[Status3["PreconditionRequired"] = 428] = "PreconditionRequired";
-    Status3[Status3["TooManyRequests"] = 429] = "TooManyRequests";
-    Status3[Status3["RequestHeaderFieldsTooLarge"] = 431] = "RequestHeaderFieldsTooLarge";
-    Status3[Status3["UnavailableForLegalReasons"] = 451] = "UnavailableForLegalReasons";
-    Status3[Status3["InternalServerError"] = 500] = "InternalServerError";
-    Status3[Status3["NotImplemented"] = 501] = "NotImplemented";
-    Status3[Status3["BadGateway"] = 502] = "BadGateway";
-    Status3[Status3["ServiceUnavailable"] = 503] = "ServiceUnavailable";
-    Status3[Status3["GatewayTimeout"] = 504] = "GatewayTimeout";
-    Status3[Status3["HTTPVersionNotSupported"] = 505] = "HTTPVersionNotSupported";
-    Status3[Status3["VariantAlsoNegotiates"] = 506] = "VariantAlsoNegotiates";
-    Status3[Status3["InsufficientStorage"] = 507] = "InsufficientStorage";
-    Status3[Status3["LoopDetected"] = 508] = "LoopDetected";
-    Status3[Status3["NotExtended"] = 510] = "NotExtended";
-    Status3[Status3["NetworkAuthenticationRequired"] = 511] = "NetworkAuthenticationRequired";
+(function(Status) {
+    Status[Status["Continue"] = 100] = "Continue";
+    Status[Status["SwitchingProtocols"] = 101] = "SwitchingProtocols";
+    Status[Status["Processing"] = 102] = "Processing";
+    Status[Status["EarlyHints"] = 103] = "EarlyHints";
+    Status[Status["OK"] = 200] = "OK";
+    Status[Status["Created"] = 201] = "Created";
+    Status[Status["Accepted"] = 202] = "Accepted";
+    Status[Status["NonAuthoritativeInfo"] = 203] = "NonAuthoritativeInfo";
+    Status[Status["NoContent"] = 204] = "NoContent";
+    Status[Status["ResetContent"] = 205] = "ResetContent";
+    Status[Status["PartialContent"] = 206] = "PartialContent";
+    Status[Status["MultiStatus"] = 207] = "MultiStatus";
+    Status[Status["AlreadyReported"] = 208] = "AlreadyReported";
+    Status[Status["IMUsed"] = 226] = "IMUsed";
+    Status[Status["MultipleChoices"] = 300] = "MultipleChoices";
+    Status[Status["MovedPermanently"] = 301] = "MovedPermanently";
+    Status[Status["Found"] = 302] = "Found";
+    Status[Status["SeeOther"] = 303] = "SeeOther";
+    Status[Status["NotModified"] = 304] = "NotModified";
+    Status[Status["UseProxy"] = 305] = "UseProxy";
+    Status[Status["TemporaryRedirect"] = 307] = "TemporaryRedirect";
+    Status[Status["PermanentRedirect"] = 308] = "PermanentRedirect";
+    Status[Status["BadRequest"] = 400] = "BadRequest";
+    Status[Status["Unauthorized"] = 401] = "Unauthorized";
+    Status[Status["PaymentRequired"] = 402] = "PaymentRequired";
+    Status[Status["Forbidden"] = 403] = "Forbidden";
+    Status[Status["NotFound"] = 404] = "NotFound";
+    Status[Status["MethodNotAllowed"] = 405] = "MethodNotAllowed";
+    Status[Status["NotAcceptable"] = 406] = "NotAcceptable";
+    Status[Status["ProxyAuthRequired"] = 407] = "ProxyAuthRequired";
+    Status[Status["RequestTimeout"] = 408] = "RequestTimeout";
+    Status[Status["Conflict"] = 409] = "Conflict";
+    Status[Status["Gone"] = 410] = "Gone";
+    Status[Status["LengthRequired"] = 411] = "LengthRequired";
+    Status[Status["PreconditionFailed"] = 412] = "PreconditionFailed";
+    Status[Status["RequestEntityTooLarge"] = 413] = "RequestEntityTooLarge";
+    Status[Status["RequestURITooLong"] = 414] = "RequestURITooLong";
+    Status[Status["UnsupportedMediaType"] = 415] = "UnsupportedMediaType";
+    Status[Status["RequestedRangeNotSatisfiable"] = 416] = "RequestedRangeNotSatisfiable";
+    Status[Status["ExpectationFailed"] = 417] = "ExpectationFailed";
+    Status[Status["Teapot"] = 418] = "Teapot";
+    Status[Status["MisdirectedRequest"] = 421] = "MisdirectedRequest";
+    Status[Status["UnprocessableEntity"] = 422] = "UnprocessableEntity";
+    Status[Status["Locked"] = 423] = "Locked";
+    Status[Status["FailedDependency"] = 424] = "FailedDependency";
+    Status[Status["TooEarly"] = 425] = "TooEarly";
+    Status[Status["UpgradeRequired"] = 426] = "UpgradeRequired";
+    Status[Status["PreconditionRequired"] = 428] = "PreconditionRequired";
+    Status[Status["TooManyRequests"] = 429] = "TooManyRequests";
+    Status[Status["RequestHeaderFieldsTooLarge"] = 431] = "RequestHeaderFieldsTooLarge";
+    Status[Status["UnavailableForLegalReasons"] = 451] = "UnavailableForLegalReasons";
+    Status[Status["InternalServerError"] = 500] = "InternalServerError";
+    Status[Status["NotImplemented"] = 501] = "NotImplemented";
+    Status[Status["BadGateway"] = 502] = "BadGateway";
+    Status[Status["ServiceUnavailable"] = 503] = "ServiceUnavailable";
+    Status[Status["GatewayTimeout"] = 504] = "GatewayTimeout";
+    Status[Status["HTTPVersionNotSupported"] = 505] = "HTTPVersionNotSupported";
+    Status[Status["VariantAlsoNegotiates"] = 506] = "VariantAlsoNegotiates";
+    Status[Status["InsufficientStorage"] = 507] = "InsufficientStorage";
+    Status[Status["LoopDetected"] = 508] = "LoopDetected";
+    Status[Status["NotExtended"] = 510] = "NotExtended";
+    Status[Status["NetworkAuthenticationRequired"] = 511] = "NetworkAuthenticationRequired";
 })(Status1 || (Status1 = {}));
 const STATUS_TEXT1 = new Map([
     [
@@ -16785,7 +16615,7 @@ const STATUS_TEXT1 = new Map([
     [
         Status1.NetworkAuthenticationRequired,
         "Network Authentication Required"
-    ], 
+    ]
 ]);
 const encoder4 = new TextEncoder();
 function emptyReader1() {
@@ -16866,8 +16696,8 @@ function chunkedBodyReader1(h, r) {
                 return buf.byteLength;
             } else {
                 const bufToFill = buf.subarray(0, chunkSize);
-                const eof = await r.readFull(bufToFill);
-                if (eof === null) {
+                const eof1 = await r.readFull(bufToFill);
+                if (eof1 === null) {
                     throw new Deno.errors.UnexpectedEof();
                 }
                 if (await tp.readLine() === null) {
@@ -16889,13 +16719,13 @@ function chunkedBodyReader1(h, r) {
         read
     };
 }
-function isProhibidedForTrailer1(key31) {
+function isProhibidedForTrailer1(key) {
     const s = new Set([
         "transfer-encoding",
         "content-length",
         "trailer"
     ]);
-    return s.has(key31.toLowerCase());
+    return s.has(key.toLowerCase());
 }
 async function readTrailers1(headers, r) {
     const trailers = parseTrailer1(headers.get("trailer"));
@@ -16910,16 +16740,14 @@ async function readTrailers1(headers, r) {
     }
     const undeclared = [
         ...result.keys()
-    ].filter((k)=>!trailerNames.includes(k)
-    );
+    ].filter((k)=>!trailerNames.includes(k));
     if (undeclared.length > 0) {
         throw new Deno.errors.InvalidData(`Undeclared trailers: ${Deno.inspect(undeclared)}.`);
     }
-    for (const [k1, v] of result){
-        headers.append(k1, v);
+    for (const [k, v] of result){
+        headers.append(k, v);
     }
-    const missingTrailers = trailerNames.filter((k)=>!result.has(k)
-    );
+    const missingTrailers = trailerNames.filter((k)=>!result.has(k));
     if (missingTrailers.length > 0) {
         throw new Deno.errors.InvalidData(`Missing trailers: ${Deno.inspect(missingTrailers)}.`);
     }
@@ -16929,21 +16757,18 @@ function parseTrailer1(field) {
     if (field == null) {
         return undefined;
     }
-    const trailerNames = field.split(",").map((v)=>v.trim().toLowerCase()
-    );
+    const trailerNames = field.split(",").map((v)=>v.trim().toLowerCase());
     if (trailerNames.length === 0) {
         throw new Deno.errors.InvalidData("Empty trailer header.");
     }
-    const prohibited = trailerNames.filter((k)=>isProhibidedForTrailer1(k)
-    );
+    const prohibited = trailerNames.filter((k)=>isProhibidedForTrailer1(k));
     if (prohibited.length > 0) {
         throw new Deno.errors.InvalidData(`Prohibited trailer names: ${Deno.inspect(prohibited)}.`);
     }
-    return new Headers(trailerNames.map((key32)=>[
-            key32,
+    return new Headers(trailerNames.map((key)=>[
+            key,
             ""
-        ]
-    ));
+        ]));
 }
 async function writeChunkedBody1(w, r) {
     for await (const chunk of Deno.iter(r)){
@@ -16968,22 +16793,19 @@ async function writeTrailers1(w, headers, trailers) {
         throw new TypeError(`Trailers are only allowed for "transfer-encoding: chunked", got "transfer-encoding: ${transferEncoding}".`);
     }
     const writer = BufWriter1.create(w);
-    const trailerNames = trailer.split(",").map((s)=>s.trim().toLowerCase()
-    );
-    const prohibitedTrailers = trailerNames.filter((k)=>isProhibidedForTrailer1(k)
-    );
+    const trailerNames = trailer.split(",").map((s)=>s.trim().toLowerCase());
+    const prohibitedTrailers = trailerNames.filter((k)=>isProhibidedForTrailer1(k));
     if (prohibitedTrailers.length > 0) {
         throw new TypeError(`Prohibited trailer names: ${Deno.inspect(prohibitedTrailers)}.`);
     }
     const undeclared = [
         ...trailers.keys()
-    ].filter((k)=>!trailerNames.includes(k)
-    );
+    ].filter((k)=>!trailerNames.includes(k));
     if (undeclared.length > 0) {
         throw new TypeError(`Undeclared trailers: ${Deno.inspect(undeclared)}.`);
     }
-    for (const [key33, value54] of trailers){
-        await writer.write(encoder4.encode(`${key33}: ${value54}\r\n`));
+    for (const [key, value] of trailers){
+        await writer.write(encoder4.encode(`${key}: ${value}\r\n`));
     }
     await writer.write(encoder4.encode("\r\n"));
     await writer.flush();
@@ -17010,22 +16832,22 @@ async function writeResponse1(w, r) {
             out += "transfer-encoding: chunked\r\n";
         }
     }
-    for (const [key34, value55] of headers){
-        out += `${key34}: ${value55}\r\n`;
+    for (const [key, value] of headers){
+        out += `${key}: ${value}\r\n`;
     }
     out += `\r\n`;
     const header = encoder4.encode(out);
     const n = await writer.write(header);
     assert2(n === header.byteLength);
     if (r.body instanceof Uint8Array) {
-        const n = await writer.write(r.body);
-        assert2(n === r.body.byteLength);
+        const n1 = await writer.write(r.body);
+        assert2(n1 === r.body.byteLength);
     } else if (headers.has("content-length")) {
         const contentLength = headers.get("content-length");
         assert2(contentLength != null);
         const bodyLength = parseInt(contentLength);
-        const n = await Deno.copy(r.body, writer);
-        assert2(n === bodyLength);
+        const n2 = await Deno.copy(r.body, writer);
+        assert2(n2 === bodyLength);
     } else {
         await writeChunkedBody1(writer, r.body);
     }
@@ -17050,8 +16872,7 @@ class ServerRequest1 {
     #body = undefined;
     #finalized = false;
     get done() {
-        return this.#done.then((e)=>e
-        );
+        return this.#done.then((e)=>e);
     }
     get contentLength() {
         if (this.#contentLength === undefined) {
@@ -17074,9 +16895,8 @@ class ServerRequest1 {
             } else {
                 const transferEncoding = this.headers.get("transfer-encoding");
                 if (transferEncoding != null) {
-                    const parts5 = transferEncoding.split(",").map((e)=>e.trim().toLowerCase()
-                    );
-                    assert2(parts5.includes("chunked"), 'transfer-encoding must include "chunked" if content-length is not set');
+                    const parts = transferEncoding.split(",").map((e)=>e.trim().toLowerCase());
+                    assert2(parts.includes("chunked"), 'transfer-encoding must include "chunked" if content-length is not set');
                     this.#body = chunkedBodyReader1(this.headers, this.r);
                 } else {
                     this.#body = emptyReader1();
@@ -17282,8 +17102,7 @@ function fixLength1(req) {
         const arrClen = contentLength.split(",");
         if (arrClen.length > 1) {
             const distinct = [
-                ...new Set(arrClen.map((e)=>e.trim()
-                ))
+                ...new Set(arrClen.map((e)=>e.trim()))
             ];
             if (distinct.length > 1) {
                 throw Error("cannot contain multiple Content-Length headers");
@@ -17335,7 +17154,7 @@ async function readLong1(buf) {
 function sliceLongToBytes1(d, dest = new Array(8)) {
     let big = BigInt(d);
     for(let i = 0; i < 8; i++){
-        dest[7 - i] = Number(big & 255n);
+        dest[7 - i] = Number(big & 0xffn);
         big >>= 8n;
     }
     return dest;
@@ -17362,11 +17181,11 @@ class Sha11 {
     #hBytes;
     #finalized;
     #hashed;
-    #h0 = 1732584193;
-    #h1 = 4023233417;
-    #h2 = 2562383102;
-    #h3 = 271733878;
-    #h4 = 3285377520;
+    #h0 = 0x67452301;
+    #h1 = 0xefcdab89;
+    #h2 = 0x98badcfe;
+    #h3 = 0x10325476;
+    #h4 = 0xc3d2e1f0;
     #lastByteIndex = 0;
     constructor(sharedMemory = false){
         this.init(sharedMemory);
@@ -17396,11 +17215,11 @@ class Sha11 {
                 0
             ];
         }
-        this.#h0 = 1732584193;
-        this.#h1 = 4023233417;
-        this.#h2 = 2562383102;
-        this.#h3 = 271733878;
-        this.#h4 = 3285377520;
+        this.#h0 = 0x67452301;
+        this.#h1 = 0xefcdab89;
+        this.#h2 = 0x98badcfe;
+        this.#h3 = 0x10325476;
+        this.#h4 = 0xc3d2e1f0;
         this.#block = this.#start = this.#bytes = this.#hBytes = 0;
         this.#finalized = this.#hashed = false;
     }
@@ -17416,43 +17235,43 @@ class Sha11 {
         }
         let index = 0;
         const length = msg.length;
-        const blocks12 = this.#blocks;
+        const blocks = this.#blocks;
         while(index < length){
             let i;
             if (this.#hashed) {
                 this.#hashed = false;
-                blocks12[0] = this.#block;
-                blocks12[16] = blocks12[1] = blocks12[2] = blocks12[3] = blocks12[4] = blocks12[5] = blocks12[6] = blocks12[7] = blocks12[8] = blocks12[9] = blocks12[10] = blocks12[11] = blocks12[12] = blocks12[13] = blocks12[14] = blocks12[15] = 0;
+                blocks[0] = this.#block;
+                blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
             }
             if (typeof msg !== "string") {
                 for(i = this.#start; index < length && i < 64; ++index){
-                    blocks12[i >> 2] |= msg[index] << SHIFT2[(i++) & 3];
+                    blocks[i >> 2] |= msg[index] << SHIFT2[i++ & 3];
                 }
             } else {
                 for(i = this.#start; index < length && i < 64; ++index){
-                    let code23 = msg.charCodeAt(index);
-                    if (code23 < 128) {
-                        blocks12[i >> 2] |= code23 << SHIFT2[(i++) & 3];
-                    } else if (code23 < 2048) {
-                        blocks12[i >> 2] |= (192 | code23 >> 6) << SHIFT2[(i++) & 3];
-                        blocks12[i >> 2] |= (128 | code23 & 63) << SHIFT2[(i++) & 3];
-                    } else if (code23 < 55296 || code23 >= 57344) {
-                        blocks12[i >> 2] |= (224 | code23 >> 12) << SHIFT2[(i++) & 3];
-                        blocks12[i >> 2] |= (128 | code23 >> 6 & 63) << SHIFT2[(i++) & 3];
-                        blocks12[i >> 2] |= (128 | code23 & 63) << SHIFT2[(i++) & 3];
+                    let code = msg.charCodeAt(index);
+                    if (code < 0x80) {
+                        blocks[i >> 2] |= code << SHIFT2[i++ & 3];
+                    } else if (code < 0x800) {
+                        blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT2[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT2[i++ & 3];
+                    } else if (code < 0xd800 || code >= 0xe000) {
+                        blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT2[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT2[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT2[i++ & 3];
                     } else {
-                        code23 = 65536 + ((code23 & 1023) << 10 | msg.charCodeAt(++index) & 1023);
-                        blocks12[i >> 2] |= (240 | code23 >> 18) << SHIFT2[(i++) & 3];
-                        blocks12[i >> 2] |= (128 | code23 >> 12 & 63) << SHIFT2[(i++) & 3];
-                        blocks12[i >> 2] |= (128 | code23 >> 6 & 63) << SHIFT2[(i++) & 3];
-                        blocks12[i >> 2] |= (128 | code23 & 63) << SHIFT2[(i++) & 3];
+                        code = 0x10000 + ((code & 0x3ff) << 10 | msg.charCodeAt(++index) & 0x3ff);
+                        blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT2[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT2[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT2[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT2[i++ & 3];
                     }
                 }
             }
             this.#lastByteIndex = i;
             this.#bytes += i - this.#start;
             if (i >= 64) {
-                this.#block = blocks12[16];
+                this.#block = blocks[16];
                 this.#start = i - 64;
                 this.hash();
                 this.#hashed = true;
@@ -17471,20 +17290,20 @@ class Sha11 {
             return;
         }
         this.#finalized = true;
-        const blocks21 = this.#blocks;
+        const blocks = this.#blocks;
         const i = this.#lastByteIndex;
-        blocks21[16] = this.#block;
-        blocks21[i >> 2] |= EXTRA2[i & 3];
-        this.#block = blocks21[16];
+        blocks[16] = this.#block;
+        blocks[i >> 2] |= EXTRA2[i & 3];
+        this.#block = blocks[16];
         if (i >= 56) {
             if (!this.#hashed) {
                 this.hash();
             }
-            blocks21[0] = this.#block;
-            blocks21[16] = blocks21[1] = blocks21[2] = blocks21[3] = blocks21[4] = blocks21[5] = blocks21[6] = blocks21[7] = blocks21[8] = blocks21[9] = blocks21[10] = blocks21[11] = blocks21[12] = blocks21[13] = blocks21[14] = blocks21[15] = 0;
+            blocks[0] = this.#block;
+            blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
         }
-        blocks21[14] = this.#hBytes << 3 | this.#bytes >>> 29;
-        blocks21[15] = this.#bytes << 3;
+        blocks[14] = this.#hBytes << 3 | this.#bytes >>> 29;
+        blocks[15] = this.#bytes << 3;
         this.hash();
     }
     hash() {
@@ -17496,97 +17315,97 @@ class Sha11 {
         let f;
         let j;
         let t;
-        const blocks3 = this.#blocks;
+        const blocks = this.#blocks;
         for(j = 16; j < 80; ++j){
-            t = blocks3[j - 3] ^ blocks3[j - 8] ^ blocks3[j - 14] ^ blocks3[j - 16];
-            blocks3[j] = t << 1 | t >>> 31;
+            t = blocks[j - 3] ^ blocks[j - 8] ^ blocks[j - 14] ^ blocks[j - 16];
+            blocks[j] = t << 1 | t >>> 31;
         }
         for(j = 0; j < 20; j += 5){
             f = b & c | ~b & d;
             t = a << 5 | a >>> 27;
-            e = t + f + e + 1518500249 + blocks3[j] >>> 0;
+            e = t + f + e + 1518500249 + blocks[j] >>> 0;
             b = b << 30 | b >>> 2;
             f = a & b | ~a & c;
             t = e << 5 | e >>> 27;
-            d = t + f + d + 1518500249 + blocks3[j + 1] >>> 0;
+            d = t + f + d + 1518500249 + blocks[j + 1] >>> 0;
             a = a << 30 | a >>> 2;
             f = e & a | ~e & b;
             t = d << 5 | d >>> 27;
-            c = t + f + c + 1518500249 + blocks3[j + 2] >>> 0;
+            c = t + f + c + 1518500249 + blocks[j + 2] >>> 0;
             e = e << 30 | e >>> 2;
             f = d & e | ~d & a;
             t = c << 5 | c >>> 27;
-            b = t + f + b + 1518500249 + blocks3[j + 3] >>> 0;
+            b = t + f + b + 1518500249 + blocks[j + 3] >>> 0;
             d = d << 30 | d >>> 2;
             f = c & d | ~c & e;
             t = b << 5 | b >>> 27;
-            a = t + f + a + 1518500249 + blocks3[j + 4] >>> 0;
+            a = t + f + a + 1518500249 + blocks[j + 4] >>> 0;
             c = c << 30 | c >>> 2;
         }
         for(; j < 40; j += 5){
             f = b ^ c ^ d;
             t = a << 5 | a >>> 27;
-            e = t + f + e + 1859775393 + blocks3[j] >>> 0;
+            e = t + f + e + 1859775393 + blocks[j] >>> 0;
             b = b << 30 | b >>> 2;
             f = a ^ b ^ c;
             t = e << 5 | e >>> 27;
-            d = t + f + d + 1859775393 + blocks3[j + 1] >>> 0;
+            d = t + f + d + 1859775393 + blocks[j + 1] >>> 0;
             a = a << 30 | a >>> 2;
             f = e ^ a ^ b;
             t = d << 5 | d >>> 27;
-            c = t + f + c + 1859775393 + blocks3[j + 2] >>> 0;
+            c = t + f + c + 1859775393 + blocks[j + 2] >>> 0;
             e = e << 30 | e >>> 2;
             f = d ^ e ^ a;
             t = c << 5 | c >>> 27;
-            b = t + f + b + 1859775393 + blocks3[j + 3] >>> 0;
+            b = t + f + b + 1859775393 + blocks[j + 3] >>> 0;
             d = d << 30 | d >>> 2;
             f = c ^ d ^ e;
             t = b << 5 | b >>> 27;
-            a = t + f + a + 1859775393 + blocks3[j + 4] >>> 0;
+            a = t + f + a + 1859775393 + blocks[j + 4] >>> 0;
             c = c << 30 | c >>> 2;
         }
         for(; j < 60; j += 5){
             f = b & c | b & d | c & d;
             t = a << 5 | a >>> 27;
-            e = t + f + e - 1894007588 + blocks3[j] >>> 0;
+            e = t + f + e - 1894007588 + blocks[j] >>> 0;
             b = b << 30 | b >>> 2;
             f = a & b | a & c | b & c;
             t = e << 5 | e >>> 27;
-            d = t + f + d - 1894007588 + blocks3[j + 1] >>> 0;
+            d = t + f + d - 1894007588 + blocks[j + 1] >>> 0;
             a = a << 30 | a >>> 2;
             f = e & a | e & b | a & b;
             t = d << 5 | d >>> 27;
-            c = t + f + c - 1894007588 + blocks3[j + 2] >>> 0;
+            c = t + f + c - 1894007588 + blocks[j + 2] >>> 0;
             e = e << 30 | e >>> 2;
             f = d & e | d & a | e & a;
             t = c << 5 | c >>> 27;
-            b = t + f + b - 1894007588 + blocks3[j + 3] >>> 0;
+            b = t + f + b - 1894007588 + blocks[j + 3] >>> 0;
             d = d << 30 | d >>> 2;
             f = c & d | c & e | d & e;
             t = b << 5 | b >>> 27;
-            a = t + f + a - 1894007588 + blocks3[j + 4] >>> 0;
+            a = t + f + a - 1894007588 + blocks[j + 4] >>> 0;
             c = c << 30 | c >>> 2;
         }
         for(; j < 80; j += 5){
             f = b ^ c ^ d;
             t = a << 5 | a >>> 27;
-            e = t + f + e - 899497514 + blocks3[j] >>> 0;
+            e = t + f + e - 899497514 + blocks[j] >>> 0;
             b = b << 30 | b >>> 2;
             f = a ^ b ^ c;
             t = e << 5 | e >>> 27;
-            d = t + f + d - 899497514 + blocks3[j + 1] >>> 0;
+            d = t + f + d - 899497514 + blocks[j + 1] >>> 0;
             a = a << 30 | a >>> 2;
             f = e ^ a ^ b;
             t = d << 5 | d >>> 27;
-            c = t + f + c - 899497514 + blocks3[j + 2] >>> 0;
+            c = t + f + c - 899497514 + blocks[j + 2] >>> 0;
             e = e << 30 | e >>> 2;
             f = d ^ e ^ a;
             t = c << 5 | c >>> 27;
-            b = t + f + b - 899497514 + blocks3[j + 3] >>> 0;
+            b = t + f + b - 899497514 + blocks[j + 3] >>> 0;
             d = d << 30 | d >>> 2;
             f = c ^ d ^ e;
             t = b << 5 | b >>> 27;
-            a = t + f + a - 899497514 + blocks3[j + 4] >>> 0;
+            a = t + f + a - 899497514 + blocks[j + 4] >>> 0;
             c = c << 30 | c >>> 2;
         }
         this.#h0 = this.#h0 + a >>> 0;
@@ -17602,7 +17421,7 @@ class Sha11 {
         const h2 = this.#h2;
         const h3 = this.#h3;
         const h4 = this.#h4;
-        return HEX_CHARS2[h0 >> 28 & 15] + HEX_CHARS2[h0 >> 24 & 15] + HEX_CHARS2[h0 >> 20 & 15] + HEX_CHARS2[h0 >> 16 & 15] + HEX_CHARS2[h0 >> 12 & 15] + HEX_CHARS2[h0 >> 8 & 15] + HEX_CHARS2[h0 >> 4 & 15] + HEX_CHARS2[h0 & 15] + HEX_CHARS2[h1 >> 28 & 15] + HEX_CHARS2[h1 >> 24 & 15] + HEX_CHARS2[h1 >> 20 & 15] + HEX_CHARS2[h1 >> 16 & 15] + HEX_CHARS2[h1 >> 12 & 15] + HEX_CHARS2[h1 >> 8 & 15] + HEX_CHARS2[h1 >> 4 & 15] + HEX_CHARS2[h1 & 15] + HEX_CHARS2[h2 >> 28 & 15] + HEX_CHARS2[h2 >> 24 & 15] + HEX_CHARS2[h2 >> 20 & 15] + HEX_CHARS2[h2 >> 16 & 15] + HEX_CHARS2[h2 >> 12 & 15] + HEX_CHARS2[h2 >> 8 & 15] + HEX_CHARS2[h2 >> 4 & 15] + HEX_CHARS2[h2 & 15] + HEX_CHARS2[h3 >> 28 & 15] + HEX_CHARS2[h3 >> 24 & 15] + HEX_CHARS2[h3 >> 20 & 15] + HEX_CHARS2[h3 >> 16 & 15] + HEX_CHARS2[h3 >> 12 & 15] + HEX_CHARS2[h3 >> 8 & 15] + HEX_CHARS2[h3 >> 4 & 15] + HEX_CHARS2[h3 & 15] + HEX_CHARS2[h4 >> 28 & 15] + HEX_CHARS2[h4 >> 24 & 15] + HEX_CHARS2[h4 >> 20 & 15] + HEX_CHARS2[h4 >> 16 & 15] + HEX_CHARS2[h4 >> 12 & 15] + HEX_CHARS2[h4 >> 8 & 15] + HEX_CHARS2[h4 >> 4 & 15] + HEX_CHARS2[h4 & 15];
+        return HEX_CHARS2[h0 >> 28 & 0x0f] + HEX_CHARS2[h0 >> 24 & 0x0f] + HEX_CHARS2[h0 >> 20 & 0x0f] + HEX_CHARS2[h0 >> 16 & 0x0f] + HEX_CHARS2[h0 >> 12 & 0x0f] + HEX_CHARS2[h0 >> 8 & 0x0f] + HEX_CHARS2[h0 >> 4 & 0x0f] + HEX_CHARS2[h0 & 0x0f] + HEX_CHARS2[h1 >> 28 & 0x0f] + HEX_CHARS2[h1 >> 24 & 0x0f] + HEX_CHARS2[h1 >> 20 & 0x0f] + HEX_CHARS2[h1 >> 16 & 0x0f] + HEX_CHARS2[h1 >> 12 & 0x0f] + HEX_CHARS2[h1 >> 8 & 0x0f] + HEX_CHARS2[h1 >> 4 & 0x0f] + HEX_CHARS2[h1 & 0x0f] + HEX_CHARS2[h2 >> 28 & 0x0f] + HEX_CHARS2[h2 >> 24 & 0x0f] + HEX_CHARS2[h2 >> 20 & 0x0f] + HEX_CHARS2[h2 >> 16 & 0x0f] + HEX_CHARS2[h2 >> 12 & 0x0f] + HEX_CHARS2[h2 >> 8 & 0x0f] + HEX_CHARS2[h2 >> 4 & 0x0f] + HEX_CHARS2[h2 & 0x0f] + HEX_CHARS2[h3 >> 28 & 0x0f] + HEX_CHARS2[h3 >> 24 & 0x0f] + HEX_CHARS2[h3 >> 20 & 0x0f] + HEX_CHARS2[h3 >> 16 & 0x0f] + HEX_CHARS2[h3 >> 12 & 0x0f] + HEX_CHARS2[h3 >> 8 & 0x0f] + HEX_CHARS2[h3 >> 4 & 0x0f] + HEX_CHARS2[h3 & 0x0f] + HEX_CHARS2[h4 >> 28 & 0x0f] + HEX_CHARS2[h4 >> 24 & 0x0f] + HEX_CHARS2[h4 >> 20 & 0x0f] + HEX_CHARS2[h4 >> 16 & 0x0f] + HEX_CHARS2[h4 >> 12 & 0x0f] + HEX_CHARS2[h4 >> 8 & 0x0f] + HEX_CHARS2[h4 >> 4 & 0x0f] + HEX_CHARS2[h4 & 0x0f];
     }
     toString() {
         return this.hex();
@@ -17615,26 +17434,26 @@ class Sha11 {
         const h3 = this.#h3;
         const h4 = this.#h4;
         return [
-            h0 >> 24 & 255,
-            h0 >> 16 & 255,
-            h0 >> 8 & 255,
-            h0 & 255,
-            h1 >> 24 & 255,
-            h1 >> 16 & 255,
-            h1 >> 8 & 255,
-            h1 & 255,
-            h2 >> 24 & 255,
-            h2 >> 16 & 255,
-            h2 >> 8 & 255,
-            h2 & 255,
-            h3 >> 24 & 255,
-            h3 >> 16 & 255,
-            h3 >> 8 & 255,
-            h3 & 255,
-            h4 >> 24 & 255,
-            h4 >> 16 & 255,
-            h4 >> 8 & 255,
-            h4 & 255, 
+            h0 >> 24 & 0xff,
+            h0 >> 16 & 0xff,
+            h0 >> 8 & 0xff,
+            h0 & 0xff,
+            h1 >> 24 & 0xff,
+            h1 >> 16 & 0xff,
+            h1 >> 8 & 0xff,
+            h1 & 0xff,
+            h2 >> 24 & 0xff,
+            h2 >> 16 & 0xff,
+            h2 >> 8 & 0xff,
+            h2 & 0xff,
+            h3 >> 24 & 0xff,
+            h3 >> 16 & 0xff,
+            h3 >> 8 & 0xff,
+            h3 & 0xff,
+            h4 >> 24 & 0xff,
+            h4 >> 16 & 0xff,
+            h4 >> 8 & 0xff,
+            h4 & 0xff
         ];
     }
     array() {
@@ -17653,13 +17472,13 @@ class Sha11 {
     }
 }
 var OpCode1;
-(function(OpCode3) {
-    OpCode3[OpCode3["Continue"] = 0] = "Continue";
-    OpCode3[OpCode3["TextFrame"] = 1] = "TextFrame";
-    OpCode3[OpCode3["BinaryFrame"] = 2] = "BinaryFrame";
-    OpCode3[OpCode3["Close"] = 8] = "Close";
-    OpCode3[OpCode3["Ping"] = 9] = "Ping";
-    OpCode3[OpCode3["Pong"] = 10] = "Pong";
+(function(OpCode) {
+    OpCode[OpCode["Continue"] = 0x0] = "Continue";
+    OpCode[OpCode["TextFrame"] = 0x1] = "TextFrame";
+    OpCode[OpCode["BinaryFrame"] = 0x2] = "BinaryFrame";
+    OpCode[OpCode["Close"] = 0x8] = "Close";
+    OpCode[OpCode["Ping"] = 0x9] = "Ping";
+    OpCode[OpCode["Pong"] = 0xa] = "Pong";
 })(OpCode1 || (OpCode1 = {}));
 function isWebSocketCloseEvent(a) {
     return hasOwnProperty(a, "code");
@@ -17680,27 +17499,27 @@ function unmask1(payload, mask) {
 async function writeFrame1(frame, writer) {
     const payloadLength = frame.payload.byteLength;
     let header;
-    const hasMask = frame.mask ? 128 : 0;
+    const hasMask = frame.mask ? 0x80 : 0;
     if (frame.mask && frame.mask.byteLength !== 4) {
         throw new Error("invalid mask. mask must be 4 bytes: length=" + frame.mask.byteLength);
     }
     if (payloadLength < 126) {
         header = new Uint8Array([
-            128 | frame.opcode,
+            0x80 | frame.opcode,
             hasMask | payloadLength
         ]);
-    } else if (payloadLength < 65535) {
+    } else if (payloadLength < 0xffff) {
         header = new Uint8Array([
-            128 | frame.opcode,
-            hasMask | 126,
+            0x80 | frame.opcode,
+            hasMask | 0b01111110,
             payloadLength >>> 8,
-            payloadLength & 255, 
+            payloadLength & 0x00ff
         ]);
     } else {
         header = new Uint8Array([
-            128 | frame.opcode,
-            hasMask | 127,
-            ...sliceLongToBytes1(payloadLength), 
+            0x80 | frame.opcode,
+            hasMask | 0b01111111,
+            ...sliceLongToBytes1(payloadLength)
         ]);
     }
     if (frame.mask) {
@@ -17717,28 +17536,28 @@ async function readFrame1(buf) {
     assert2(b !== null);
     let isLastFrame = false;
     switch(b >>> 4){
-        case 8:
+        case 0b1000:
             isLastFrame = true;
             break;
-        case 0:
+        case 0b0000:
             isLastFrame = false;
             break;
         default:
             throw new Error("invalid signature");
     }
-    const opcode = b & 15;
+    const opcode = b & 0x0f;
     b = await buf.readByte();
     assert2(b !== null);
     const hasMask = b >>> 7;
-    let payloadLength = b & 127;
+    let payloadLength = b & 0b01111111;
     if (payloadLength === 126) {
         const l = await readShort1(buf);
         assert2(l !== null);
         payloadLength = l;
     } else if (payloadLength === 127) {
-        const l = await readLong1(buf);
-        assert2(l !== null);
-        payloadLength = Number(l);
+        const l1 = await readLong1(buf);
+        assert2(l1 !== null);
+        payloadLength = Number(l1);
     }
     let mask;
     if (hasMask) {
@@ -17767,7 +17586,7 @@ class WebSocketImpl1 {
         this.bufWriter = bufWriter || new BufWriter1(conn);
     }
     async *[Symbol.asyncIterator]() {
-        const decoder6 = new TextDecoder();
+        const decoder = new TextDecoder();
         let frames = [];
         let payloadsLength = 0;
         while(!this._isClosed){
@@ -17786,16 +17605,16 @@ class WebSocketImpl1 {
                     frames.push(frame);
                     payloadsLength += frame.payload.length;
                     if (frame.isLastFrame) {
-                        const concat11 = new Uint8Array(payloadsLength);
+                        const concat = new Uint8Array(payloadsLength);
                         let offs = 0;
-                        for (const frame of frames){
-                            concat11.set(frame.payload, offs);
-                            offs += frame.payload.length;
+                        for (const frame1 of frames){
+                            concat.set(frame1.payload, offs);
+                            offs += frame1.payload.length;
                         }
                         if (frames[0].opcode === OpCode1.TextFrame) {
-                            yield decoder6.decode(concat11);
+                            yield decoder.decode(concat);
                         } else {
-                            yield concat11;
+                            yield concat;
                         }
                         frames = [];
                         payloadsLength = 0;
@@ -17803,11 +17622,11 @@ class WebSocketImpl1 {
                     break;
                 case OpCode1.Close:
                     {
-                        const code24 = frame.payload[0] << 8 | frame.payload[1];
-                        const reason = decoder6.decode(frame.payload.subarray(2, frame.payload.length));
-                        await this.close(code24, reason);
+                        const code = frame.payload[0] << 8 | frame.payload[1];
+                        const reason = decoder.decode(frame.payload.subarray(2, frame.payload.length));
+                        await this.close(code, reason);
                         yield {
-                            code: code24,
+                            code,
                             reason
                         };
                         return;
@@ -17838,9 +17657,7 @@ class WebSocketImpl1 {
         if (!entry) return;
         if (this._isClosed) return;
         const { d , frame  } = entry;
-        writeFrame1(frame, this.bufWriter).then(()=>d.resolve()
-        ).catch((e)=>d.reject(e)
-        ).finally(()=>{
+        writeFrame1(frame, this.bufWriter).then(()=>d.resolve()).catch((e)=>d.reject(e)).finally(()=>{
             this.sendQueue.shift();
             this.dequeue();
         });
@@ -17884,11 +17701,11 @@ class WebSocketImpl1 {
     get isClosed() {
         return this._isClosed;
     }
-    async close(code25 = 1000, reason) {
+    async close(code = 1000, reason) {
         try {
             const header = [
-                code25 >>> 8,
-                code25 & 255
+                code >>> 8,
+                code & 0x00ff
             ];
             let payload;
             if (reason) {
@@ -17918,14 +17735,13 @@ class WebSocketImpl1 {
         if (this.isClosed) return;
         try {
             this.conn.close();
-        } catch (e1) {
-            console.error(e1);
+        } catch (e) {
+            console.error(e);
         } finally{
             this._isClosed = true;
             const rest = this.sendQueue;
             this.sendQueue = [];
-            rest.forEach((e)=>e.d.reject(new Deno.errors.ConnectionReset("Socket has already been closed"))
-            );
+            rest.forEach((e)=>e.d.reject(new Deno.errors.ConnectionReset("Socket has already been closed")));
         }
     }
 }
@@ -17985,11 +17801,11 @@ class WebSocketError extends Error {
     }
 }
 var WebSocketState;
-(function(WebSocketState1) {
-    WebSocketState1[WebSocketState1["CONNECTING"] = 0] = "CONNECTING";
-    WebSocketState1[WebSocketState1["OPEN"] = 1] = "OPEN";
-    WebSocketState1[WebSocketState1["CLOSING"] = 2] = "CLOSING";
-    WebSocketState1[WebSocketState1["CLOSED"] = 3] = "CLOSED";
+(function(WebSocketState) {
+    WebSocketState[WebSocketState["CONNECTING"] = 0] = "CONNECTING";
+    WebSocketState[WebSocketState["OPEN"] = 1] = "OPEN";
+    WebSocketState[WebSocketState["CLOSING"] = 2] = "CLOSING";
+    WebSocketState[WebSocketState["CLOSED"] = 3] = "CLOSED";
 })(WebSocketState || (WebSocketState = {}));
 class WebSocketServer extends EventEmitter {
     clients;
@@ -18059,12 +17875,12 @@ class WebSocketAcceptedClient extends EventEmitter {
                     const [, body] = ev;
                     this.emit("ping", body);
                 } else if (isWebSocketPongEvent(ev)) {
-                    const [, body] = ev;
-                    this.emit("pong", body);
+                    const [, body1] = ev;
+                    this.emit("pong", body1);
                 } else if (isWebSocketCloseEvent(ev)) {
-                    const { code: code26 , reason  } = ev;
+                    const { code , reason  } = ev;
                     this.state = WebSocketState.CLOSED;
-                    this.emit("close", code26);
+                    this.emit("close", code);
                 }
             }
         } catch (err) {
@@ -18097,12 +17913,12 @@ class WebSocketAcceptedClient extends EventEmitter {
             this.emit("close", error.message);
         }
     }
-    async close(code27 = 1000, reason) {
+    async close(code = 1000, reason) {
         if (this.state === WebSocketState.CLOSING || this.state === WebSocketState.CLOSED) {
             return;
         }
         this.state = WebSocketState.CLOSING;
-        return this.webSocket.close(code27, reason);
+        return this.webSocket.close(code, reason);
     }
     async closeForce() {
         if (this.state === WebSocketState.CLOSING || this.state === WebSocketState.CLOSED) {
@@ -18180,10 +17996,10 @@ async function opn(target, opts) {
         stderr: "inherit"
     });
     if (wait) {
-        return new Promise(async (resolve8, reject)=>{
+        return new Promise(async (resolve, reject)=>{
             let status = await process.status();
             if (status.success) {
-                resolve8(process);
+                resolve(process);
             } else {
                 reject(new Error("Exited with code " + status.code));
             }
@@ -18197,7 +18013,7 @@ const files = {
             "{",
             "  \"files\": {",
             "    \"main.css\": \"/static/css/main.c0342415.chunk.css\",",
-            "    \"main.js\": \"/static/js/main.2a42c23f.chunk.js\",",
+            "    \"main.js\": \"/static/js/main.fd5aaf45.chunk.js\",",
             "    \"runtime-main.js\": \"/static/js/runtime-main.d65ad4e2.js\",",
             "    \"static/js/2.d2dd7ffa.chunk.js\": \"/static/js/2.d2dd7ffa.chunk.js\",",
             "    \"index.html\": \"/index.html\",",
@@ -18207,7 +18023,7 @@ const files = {
             "    \"static/js/runtime-main.d65ad4e2.js\",",
             "    \"static/js/2.d2dd7ffa.chunk.js\",",
             "    \"static/css/main.c0342415.chunk.css\",",
-            "    \"static/js/main.2a42c23f.chunk.js\"",
+            "    \"static/js/main.fd5aaf45.chunk.js\"",
             "  ]",
             "}"
         ],
@@ -18271,7 +18087,7 @@ const files = {
             "f<i.length;=",
             "f++)r(i[f]);=",
             "var p=3Da;=",
-            "t()}([])</script><script src=3D\"/static/js/2.d2dd7ffa.chunk.js\"></script><script src=3D\"/static/js/main.2a42c23f.chunk.js\"></script></body></html>"
+            "t()}([])</script><script src=3D\"/static/js/2.d2dd7ffa.chunk.js\"></script><script src=3D\"/static/js/main.fd5aaf45.chunk.js\"></script></body></html>"
         ],
         "encoding": "quoted"
     },
@@ -22800,7 +22616,7 @@ const files = {
         ],
         "encoding": "quoted"
     },
-    "static/js/main.2a42c23f.chunk.js": {
+    "static/js/main.fd5aaf45.chunk.js": {
         "content": [
             "(this[\"webpackJsonpjira-work-logger\"]=3Dthis[\"webpackJsonpjira-work-logger\"]||[]).push([[0],{100:function(e,t,n){},102:function(e,t,n){\"use strict\";=",
             "n.r(t);=",
@@ -22869,7 +22685,7 @@ const files = {
             "e.data.dates[r]=3Da},setHourValue:function(e,t){var n=3Dt.payload,r=3Dn.x,a=3Dn.y,o=3Dn.hour;=",
             "e.data.hours[r][a]=3Do},setWorksLogged:function(e,t){var n=3Dt.payload.worksLogged;=",
             "e.worksLogged=3Dn},importHamsterReport:function(e,t){!function(e,t){var n=3Dnew Set(e.map((function(e){return e.date}))),r=3Dnew Set(e.map((function(e){return e.comment}))),a=3Dfunction(e){return e.ma=",
-            "tch(/[A-Z]+-[0-9]+/)?e.replace(/^(.*?)([A-Z]+-[0-9]+)(.*?)$/g,\"$2\"):\"\"};=",
+            "tch(/[A-Z0-9]+-[0-9]+/)?e.replace(/^(.*?)([A-Z0-9]+-[0-9]+)(.*?)$/g,\"$2\"):\"\"};=",
             "t.data=3D{dates:Array.from(n).sort().map((function(e){return new Date(e)})),issues:Array.from(r).map((function(e){return{key:a(e),workLogComment:e,reactKey:Math.random()}})),hours:[]},n.forEach((funct=",
             "ion(){return t.data.hours.push(new Array(t.data.issues.length).fill(0))})),e.forEach((function(e){var n=3De.comment,r=3De.hours,a=3De.date,o=3Dt.data.issues.map((function(e){return e.workLogComment}))=",
             ".indexOf(n);=",
@@ -22923,10 +22739,10 @@ const files = {
             "default:n=3D\"#ffc594\"}return Object(r.jsx)(\"div\",{style:{backgroundColor:n,fontSize:20,borderRadius:20,width:100},children:t})}n(98);=",
             "var re=3Dn(151),ae=3Dn(103),oe=3Dfunction(e){var t,n,a=3De.issue,o=3De.onDelete,s=3De.onKeyChange,c=3De.onCommentChange,i=3De.jiraUrl;=",
             "return Object(r.jsxs)(\"div\",{children:[Object(r.jsxs)(\"div\",{children:[Object(r.jsx)(ae.a,{color:\"secondary\",onClick:o,children:Object(r.jsx)(re.a,{fontSize:\"large\"})}),Object(r.jsx)(A.a,{className:\"i=",
-            "ssue\",value:a.key,style:{maxWidth:100,backgroundColor:a.key.match(/^[A-Za-z]+-[0-9]+$/)?\"#edf4ff\":\"#ffdbd0\"},onChange:function(e){return s(e.target.value)}}),Object(r.jsx)(A.a,{className:\"comment\",val=",
-            "ue:a.workLogComment,placeholder:\"Work log comment\",style:{minWidth:350},onChange:function(e){return c(e.target.value)}})]}),(null=3D=3D=3D(t=3Da.fields)||void 0=3D=3D=3Dt?void 0:t.summary)?Object(r.js=",
-            "x)(\"div\",{className:\"issue-summary\",children:Object(r.jsx)(\"a\",{target:\"_blank\",rel:\"noopener noreferrer\",href:\"\".concat(i,\"/browse/\").concat(a.key),children:null=3D=3D=3D(n=3Da.fields)||void 0=3D=3D==",
-            "3Dn?void 0:n.summary})}):\"\"]})},se=3Dn(167),ce=3Dn(164),ie=3Dn(55),ue=3D(n(99),n(152)),le=3D7.4,de=3D1.85;=",
+            "ssue\",value:a.key,style:{maxWidth:100,backgroundColor:a.key.match(/^[A-Za-z0-9]+-[0-9]+$/)?\"#edf4ff\":\"#ffdbd0\"},onChange:function(e){return s(e.target.value)}}),Object(r.jsx)(A.a,{className:\"comment\",=",
+            "value:a.workLogComment,placeholder:\"Work log comment\",style:{minWidth:350},onChange:function(e){return c(e.target.value)}})]}),(null=3D=3D=3D(t=3Da.fields)||void 0=3D=3D=3Dt?void 0:t.summary)?Object(r=",
+            ".jsx)(\"div\",{className:\"issue-summary\",children:Object(r.jsx)(\"a\",{target:\"_blank\",rel:\"noopener noreferrer\",href:\"\".concat(i,\"/browse/\").concat(a.key),children:null=3D=3D=3D(n=3Da.fields)||void 0=3D==",
+            "3D=3Dn?void 0:n.summary})}):\"\"]})},se=3Dn(167),ce=3Dn(164),ie=3Dn(55),ue=3D(n(99),n(152)),le=3D7.4,de=3D1.85;=",
             "function fe(e){switch(!0){case e<=3D0:return\"#fff\";=",
             "case e>le:return\"hsl(\".concat(50,\",100%,76%)\");=",
             "default:return\"hsl(\".concat(250-e/le*200,\",100%,76%)\")}}function je(e){return N(e-=3Dde),e<0?0:e}function me(e){return N(e+=3Dde),e>le?le:e}var be=3Dfunction(e){var t=3De.hour,n=3De.setHour,a=3DObject=",
@@ -22959,9 +22775,9 @@ const files = {
             "),{},{onIssueKeyUpdated:function(e,t,n,r,a){return function(){var o=3DObject(d.a)(l.a.mark((function o(s,c){var i;=",
             "return l.a.wrap((function(o){for(;=",
             ";=",
-            ")switch(o.prev=3Do.next){case 0:e&&clearTimeout(e),void 0!=3D=3Da.key&&((null=3D=3D=3D(i=3Da.key)||void 0=3D=3D=3Di?void 0:i.trim().match(/[A-Za-z]+-[0-9]+/))?(s(H.setIssueValue({y:r,issue:Object(k.a)=",
-            "(Object(k.a)({},n),{},{key:a.key||\"\",fields:{summary:\"\"}})})),t(setTimeout((function(){return R(a,c,s,r)}),1e3))):s(H.setIssueValue({y:r,issue:Object(k.a)(Object(k.a)({},n),{},{key:a.key||\"\",fields:{s=",
-            "ummary:\"\"}})}))),void 0!=3D=3Da.comment&&s(H.setIssueValue({y:r,issue:Object(k.a)(Object(k.a)({},n),{},{workLogComment:a.comment})}));=",
+            ")switch(o.prev=3Do.next){case 0:e&&clearTimeout(e),void 0!=3D=3Da.key&&((null=3D=3D=3D(i=3Da.key)||void 0=3D=3D=3Di?void 0:i.trim().match(/[A-Za-z0-9]+-[0-9]+/))?(s(H.setIssueValue({y:r,issue:Object(k=",
+            ".a)(Object(k.a)({},n),{},{key:a.key||\"\",fields:{summary:\"\"}})})),t(setTimeout((function(){return R(a,c,s,r)}),1e3))):s(H.setIssueValue({y:r,issue:Object(k.a)(Object(k.a)({},n),{},{key:a.key||\"\",fields=",
+            ":{summary:\"\"}})}))),void 0!=3D=3Da.comment&&s(H.setIssueValue({y:r,issue:Object(k.a)(Object(k.a)({},n),{},{workLogComment:a.comment})}));=",
             "case 3:case\"end\":return o.stop()}}),o)})));=",
             "return function(e,t){return o.apply(this,arguments)}}()}}))((function(e){var t=3De.data,n=3De.config,a=3De.worksLogged,o=3De.addRow,s=3De.addColumn,c=3De.removeColumn,i=3De.removeRow,u=3De.setDateValu=",
             "e,l=3De.setHourValue,d=3De.onIssueKeyUpdated;=",
@@ -22991,7 +22807,7 @@ const files = {
             "return l.a.wrap((function(e){for(;=",
             ";=",
             ")switch(e.prev=3De.next){case 0:return t(H.setLogThisWorkInProgress({newLogThisWorkInProgress:!0})),e.prev=3D1,r=3Dn().data.issues.map((function(e,t){return{issue:e,y:t}})).filter((function(e){return =",
-            "e.issue.key.match(/^[A-Za-z]+-[0-9]+$/)})).flatMap((function(e){var t=3De.issue,r=3De.y;=",
+            "e.issue.key.match(/^[A-Za-z0-9]+-[0-9]+$/)})).flatMap((function(e){var t=3De.issue,r=3De.y;=",
             "return n().data.dates.map((function(e,a){return{issue:t,date:e,hours:n().data.hours[a][r]}}))})).filter((function(e){return e.hours>0})).map((function(e){var t=3De.issue,n=3De.date,r=3De.hours;=",
             "return{key:t.key,comment:t.workLogComment||\"\",date:n.toISOString().substr(0,10),hours:r}})),e.next=3D5,fetch(\"http://localhost:8000/createWorkLogs\",{method:\"POST\",mode:\"no-cors\",body:JSON.stringify({c=",
             "onfig:n().config,toLog:r})});=",
@@ -23053,11 +22869,10 @@ const files = {
 };
 const hexTable = new TextEncoder().encode("0123456789ABCDEF");
 function encodeQuotedPrintableByte(c) {
-    return c === 9 || c === 10 || c === 13 || 32 <= c && c <= 60 || 62 <= c && c <= 126 ? String.fromCharCode(c) : "=" + String.fromCharCode(hexTable[c >> 4], hexTable[c & 15]);
+    return c === 9 || c === 10 || c === 13 || 32 <= c && c <= 60 || 62 <= c && c <= 126 ? String.fromCharCode(c) : "=" + String.fromCharCode(hexTable[c >> 4], hexTable[c & 0x0f]);
 }
 function encodeQuotedPrintable(uint8Array) {
-    return Array.from(uint8Array.values()).map(encodeQuotedPrintableByte).join("").replaceAll(";", ";=\n").split("\n").map((line)=>(line.match(/.{1,200}/g) || []).join("=\n")
-    ).join("\n");
+    return Array.from(uint8Array.values()).map(encodeQuotedPrintableByte).join("").replaceAll(";", ";=\n").split("\n").map((line)=>(line.match(/.{1,200}/g) || []).join("=\n")).join("\n");
 }
 async function decodeQuotedPrintable(encoded) {
     const buffer = new Deno.Buffer();
@@ -23105,7 +22920,7 @@ async function decodeFileContent(fileEncoded) {
     return fileEncoded.encoding === "base64" ? decodeFileContentB64(fileEncoded.content.join("\n")) : await decodeQuotedPrintable(fileEncoded.content.join("\n"));
 }
 async function encodeFolder(folderPath) {
-    const files1 = {};
+    const files = {};
     for await (const entry of walk(folderPath)){
         if (entry.isFile) {
             const file = await Deno.open(entry.path, {
@@ -23113,24 +22928,24 @@ async function encodeFolder(folderPath) {
             });
             const content = await Deno.readAll(file);
             Deno.close(file.rid);
-            const path48 = entry.path.replace(folderPath + "/", "");
-            console.log(path48);
-            files1[path48] = encodeFileContent(content);
-            assertEquals(await decodeFileContent(files1[path48]), content);
+            const path = entry.path.replace(folderPath + "/", "");
+            console.log(path);
+            files[path] = encodeFileContent(content);
+            assertEquals(await decodeFileContent(files[path]), content);
         }
     }
-    return files1;
+    return files;
 }
-function replacer(key1, value56) {
-    return value56 == null || value56.constructor != Object ? value56 : Object.keys(value56).sort().reduce((obj, key35)=>{
-        obj[key35] = value56[key35];
+function replacer(key, value) {
+    return value == null || value.constructor != Object ? value : Object.keys(value).sort().reduce((obj, key)=>{
+        obj[key] = value[key];
         return obj;
     }, {});
 }
 async function genFilesContent() {
     const cwd = dirname1(dirname1(fromFileUrl1(importMeta.url))) + "/frontend/build";
-    const files2 = await encodeFolder(cwd);
-    await Deno.writeTextFile("filesContent.ts", `import { EncodedFiles } from "./filesContentGenerator.ts";\n` + "export const files: EncodedFiles = " + JSON.stringify(files2, replacer, " ") + "\n");
+    const files = await encodeFolder(cwd);
+    await Deno.writeTextFile("filesContent.ts", `import { EncodedFiles } from "./filesContentGenerator.ts";\n` + "export const files: EncodedFiles = " + JSON.stringify(files, replacer, " ") + "\n");
 }
 if (importMeta.main) {
     await genFilesContent();
@@ -23155,16 +22970,14 @@ async function getHamsterReport(begin, end, ignore) {
         ],
         stdout: "piped"
     }).output();
-    return new TextDecoder().decode(hamsterReport).split("\n").slice(1).filter((line)=>line
-    ).map((line)=>{
+    return new TextDecoder().decode(hamsterReport).split("\n").slice(1).filter((line)=>line).map((line)=>{
         const [comment, date, , minutes, category] = line.split("\t");
         return {
             comment: `${comment}@${category}`,
             date,
             minutes
         };
-    }).filter(({ comment , date , minutes  })=>!ignore || !comment || !comment.match(ignore)
-    ).map(({ comment , date , minutes  })=>{
+    }).filter(({ comment , date , minutes  })=>!ignore || !comment || !comment.match(ignore)).map(({ comment , date , minutes  })=>{
         return {
             comment,
             date: date?.substr(0, 10),
@@ -23189,25 +23002,27 @@ async function jiraApi(config, query, options) {
                 headers: {
                     "content-type": "application/x-www-form-urlencoded"
                 },
-                body: `os_username=${encodeURI(config.username)}&os_password=${encodeURI(config.password)}&os_destination=&user_role=&atl_token=&login=Log+In`,
+                body: `os_username=${encodeURI(config.username).replaceAll("&", "%26")}&os_password=${encodeURI(config.password).replaceAll("&", "%26")}&os_destination=&user_role=&atl_token=&login=Log+In`,
                 redirect: "manual"
             });
             if (resp.headers.get("x-seraph-loginreason") !== "OK") {
                 throw new Error("auth KO");
             }
             headers.append("cookie", resp.headers.get("set-cookie") || "");
+        } else {
+            headers.append("Authorization", "Basic " + btoa(`${config.username}:${config.password}`));
         }
     }
     if (options?.body) {
         headers.append("Content-Type", "application/json");
     }
     const url = `${config.jiraUrl.replace(/\/$/, "")}/rest/api/2/${query}`;
-    const response5 = await fetch(url, {
+    const response = await fetch(url, {
         ...options,
         headers
     });
-    console.log(`%c[jiraApi] ${response5.status} ${options?.method || "GET"} ${url}`, "color:green");
-    return await response5.json();
+    console.log(`%c[jiraApi] ${response.status} ${options?.method || "GET"} ${url}`, "color:green");
+    return await response.json();
 }
 async function jiraJql(config, jql) {
     return await jiraApi(config, `search?fields=summary,worklog&maxResults=20&jql=${jql.replace(/\s+/g, " ")}`);
@@ -23243,11 +23058,11 @@ function allowLocalhost(ctx) {
         ctx.response.headers.set("Access-Control-Allow-Origin", origin);
     }
 }
-function addStopRoute(router, controller1) {
+function addStopRoute(router, controller) {
     router.post("/stop", (ctx)=>{
         ctx.response.body = "stop ok";
         console.log("Stop");
-        controller1.abort();
+        controller.abort();
     });
 }
 async function addStaticFilesRoutes(router) {
@@ -23258,16 +23073,14 @@ async function addStaticFilesRoutes(router) {
             ctx.response.type = lookup("index.html");
         });
     }
-    Object.entries(files).map(([path49, content])=>[
-            path49,
-            lookup(path49),
+    Object.entries(files).map(([path, content])=>[
+            path,
+            lookup(path),
             decodeFileContent(content)
-        ]
-    ).map(([path50, type, bodyPromise])=>router.get(`/${path50}`, async (ctx)=>{
+        ]).map(([path, type, bodyPromise])=>router.get(`/${path}`, async (ctx)=>{
             ctx.response.body = await bodyPromise;
             ctx.response.type = String(type);
-        })
-    );
+        }));
 }
 function addJiraRoutes(router) {
     router.post("/myLastIssues", async (ctx)=>{
@@ -23297,8 +23110,7 @@ function addJiraRoutes(router) {
         const { config , toLog  } = JSON.parse(await ctx.request.body().value);
         for (const log of toLog){
             await logElement(config, log);
-            await new Promise((resolve9)=>setTimeout(resolve9, 800)
-            );
+            await new Promise((resolve)=>setTimeout(resolve, 800));
         }
         ctx.response.body = '{"status":"OK"}';
         ctx.response.type = "application/json";
@@ -23317,9 +23129,9 @@ function addHamsterRoute(router) {
         allowLocalhost(ctx);
     });
 }
-function getRouter(controller2) {
+function getRouter(controller) {
     const router = new Router();
-    addStopRoute(router, controller2);
+    addStopRoute(router, controller);
     addStaticFilesRoutes(router);
     addJiraRoutes(router);
     addHamsterRoute(router);
@@ -23350,14 +23162,12 @@ if (importMeta2.main) {
 }
 const controller = new AbortController();
 const oakApp = new Application();
-oakApp.addEventListener("error", (evt)=>console.log(evt.error)
-);
+oakApp.addEventListener("error", (evt)=>console.log(evt.error));
 oakApp.addEventListener("listen", ()=>{
     console.log(`Listening on: http://localhost:${8000}`);
     opn(`http://localhost:${8000}`, {
         checkDenoPermission: true
-    }).catch(()=>console.log("Run permission is missing, the hamster import will not work, and the localhost url was not opened in the default web browser at launch")
-    );
+    }).catch(()=>console.log("Run permission is missing, the hamster import will not work, and the localhost url was not opened in the default web browser at launch"));
 });
 oakApp.use(getRouter(controller).routes());
 oakApp.listen({
@@ -23366,6 +23176,5 @@ oakApp.listen({
     signal: controller.signal
 });
 if (Deno.args.includes("--wait-and-close")) {
-    runWebsocketServerAndWaitClose().then(()=>controller.abort()
-    );
+    runWebsocketServerAndWaitClose().then(()=>controller.abort());
 }

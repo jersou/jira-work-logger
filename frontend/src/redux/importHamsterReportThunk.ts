@@ -22,8 +22,8 @@ export function importHamsterReportToState(hamsterReport: HamsterReportElement[]
   const comments = new Set(hamsterReport.map(log => log.comment))
 
   const keyFromComment = (comment: string) =>
-    comment.match(/[A-Z]+-[0-9]+/) ?
-      comment.replace(/^(.*?)([A-Z]+-[0-9]+)(.*?)$/g, "$2")
+    comment.match(/[A-Z0-9]+-[0-9]+/) ?
+      comment.replace(/^(.*?)([A-Z0-9]+-[0-9]+)(.*?)$/g, "$2")
       : ""
 
   state.data = {

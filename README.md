@@ -86,8 +86,9 @@ or add the `--reload` parameter to the run command
 ```
 git clone https://github.com/jersou/jira-work-logger.git
 cd jira-work-logger/frontend
-yarn install
-yarn build
+#nvm use v14.17.0
+npm install
+npm run build
 cd ../bundler/
 deno run --unstable --allow-read --allow-write filesContentGenerator.ts
 cd ..

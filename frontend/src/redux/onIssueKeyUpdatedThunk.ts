@@ -34,7 +34,7 @@ export const onIssueKeyUpdatedThunk = (
 ): AppThunk => async (dispatch: Dispatch, getState: GetState) => {
   timeout && clearTimeout(timeout)
   if (newData.key !== undefined) {
-    if (newData.key?.trim().match(/[A-Za-z]+-[0-9]+/)) {
+    if (newData.key?.trim().match(/[A-Za-z0-9]+-[0-9]+/)) {
       dispatch(actions.setIssueValue({y, issue: {...issue, key: newData.key || "", fields: {summary: ""}}}))
       setTimeoutRef(setTimeout(() => getIssueSummaryFromJira(newData, getState, dispatch, y), 1000))
     } else {

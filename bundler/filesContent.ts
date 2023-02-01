@@ -5,7 +5,7 @@ export const files: EncodedFiles = {
    "{",
    "  \"files\": {",
    "    \"main.css\": \"/static/css/main.c0342415.chunk.css\",",
-   "    \"main.js\": \"/static/js/main.2a42c23f.chunk.js\",",
+   "    \"main.js\": \"/static/js/main.fd5aaf45.chunk.js\",",
    "    \"runtime-main.js\": \"/static/js/runtime-main.d65ad4e2.js\",",
    "    \"static/js/2.d2dd7ffa.chunk.js\": \"/static/js/2.d2dd7ffa.chunk.js\",",
    "    \"index.html\": \"/index.html\",",
@@ -15,7 +15,7 @@ export const files: EncodedFiles = {
    "    \"static/js/runtime-main.d65ad4e2.js\",",
    "    \"static/js/2.d2dd7ffa.chunk.js\",",
    "    \"static/css/main.c0342415.chunk.css\",",
-   "    \"static/js/main.2a42c23f.chunk.js\"",
+   "    \"static/js/main.fd5aaf45.chunk.js\"",
    "  ]",
    "}"
   ],
@@ -79,7 +79,7 @@ export const files: EncodedFiles = {
    "f<i.length;=",
    "f++)r(i[f]);=",
    "var p=3Da;=",
-   "t()}([])</script><script src=3D\"/static/js/2.d2dd7ffa.chunk.js\"></script><script src=3D\"/static/js/main.2a42c23f.chunk.js\"></script></body></html>"
+   "t()}([])</script><script src=3D\"/static/js/2.d2dd7ffa.chunk.js\"></script><script src=3D\"/static/js/main.fd5aaf45.chunk.js\"></script></body></html>"
   ],
   "encoding": "quoted"
  },
@@ -4608,7 +4608,7 @@ export const files: EncodedFiles = {
   ],
   "encoding": "quoted"
  },
- "static/js/main.2a42c23f.chunk.js": {
+ "static/js/main.fd5aaf45.chunk.js": {
   "content": [
    "(this[\"webpackJsonpjira-work-logger\"]=3Dthis[\"webpackJsonpjira-work-logger\"]||[]).push([[0],{100:function(e,t,n){},102:function(e,t,n){\"use strict\";=",
    "n.r(t);=",
@@ -4677,7 +4677,7 @@ export const files: EncodedFiles = {
    "e.data.dates[r]=3Da},setHourValue:function(e,t){var n=3Dt.payload,r=3Dn.x,a=3Dn.y,o=3Dn.hour;=",
    "e.data.hours[r][a]=3Do},setWorksLogged:function(e,t){var n=3Dt.payload.worksLogged;=",
    "e.worksLogged=3Dn},importHamsterReport:function(e,t){!function(e,t){var n=3Dnew Set(e.map((function(e){return e.date}))),r=3Dnew Set(e.map((function(e){return e.comment}))),a=3Dfunction(e){return e.ma=",
-   "tch(/[A-Z]+-[0-9]+/)?e.replace(/^(.*?)([A-Z]+-[0-9]+)(.*?)$/g,\"$2\"):\"\"};=",
+   "tch(/[A-Z0-9]+-[0-9]+/)?e.replace(/^(.*?)([A-Z0-9]+-[0-9]+)(.*?)$/g,\"$2\"):\"\"};=",
    "t.data=3D{dates:Array.from(n).sort().map((function(e){return new Date(e)})),issues:Array.from(r).map((function(e){return{key:a(e),workLogComment:e,reactKey:Math.random()}})),hours:[]},n.forEach((funct=",
    "ion(){return t.data.hours.push(new Array(t.data.issues.length).fill(0))})),e.forEach((function(e){var n=3De.comment,r=3De.hours,a=3De.date,o=3Dt.data.issues.map((function(e){return e.workLogComment}))=",
    ".indexOf(n);=",
@@ -4731,10 +4731,10 @@ export const files: EncodedFiles = {
    "default:n=3D\"#ffc594\"}return Object(r.jsx)(\"div\",{style:{backgroundColor:n,fontSize:20,borderRadius:20,width:100},children:t})}n(98);=",
    "var re=3Dn(151),ae=3Dn(103),oe=3Dfunction(e){var t,n,a=3De.issue,o=3De.onDelete,s=3De.onKeyChange,c=3De.onCommentChange,i=3De.jiraUrl;=",
    "return Object(r.jsxs)(\"div\",{children:[Object(r.jsxs)(\"div\",{children:[Object(r.jsx)(ae.a,{color:\"secondary\",onClick:o,children:Object(r.jsx)(re.a,{fontSize:\"large\"})}),Object(r.jsx)(A.a,{className:\"i=",
-   "ssue\",value:a.key,style:{maxWidth:100,backgroundColor:a.key.match(/^[A-Za-z]+-[0-9]+$/)?\"#edf4ff\":\"#ffdbd0\"},onChange:function(e){return s(e.target.value)}}),Object(r.jsx)(A.a,{className:\"comment\",val=",
-   "ue:a.workLogComment,placeholder:\"Work log comment\",style:{minWidth:350},onChange:function(e){return c(e.target.value)}})]}),(null=3D=3D=3D(t=3Da.fields)||void 0=3D=3D=3Dt?void 0:t.summary)?Object(r.js=",
-   "x)(\"div\",{className:\"issue-summary\",children:Object(r.jsx)(\"a\",{target:\"_blank\",rel:\"noopener noreferrer\",href:\"\".concat(i,\"/browse/\").concat(a.key),children:null=3D=3D=3D(n=3Da.fields)||void 0=3D=3D==",
-   "3Dn?void 0:n.summary})}):\"\"]})},se=3Dn(167),ce=3Dn(164),ie=3Dn(55),ue=3D(n(99),n(152)),le=3D7.4,de=3D1.85;=",
+   "ssue\",value:a.key,style:{maxWidth:100,backgroundColor:a.key.match(/^[A-Za-z0-9]+-[0-9]+$/)?\"#edf4ff\":\"#ffdbd0\"},onChange:function(e){return s(e.target.value)}}),Object(r.jsx)(A.a,{className:\"comment\",=",
+   "value:a.workLogComment,placeholder:\"Work log comment\",style:{minWidth:350},onChange:function(e){return c(e.target.value)}})]}),(null=3D=3D=3D(t=3Da.fields)||void 0=3D=3D=3Dt?void 0:t.summary)?Object(r=",
+   ".jsx)(\"div\",{className:\"issue-summary\",children:Object(r.jsx)(\"a\",{target:\"_blank\",rel:\"noopener noreferrer\",href:\"\".concat(i,\"/browse/\").concat(a.key),children:null=3D=3D=3D(n=3Da.fields)||void 0=3D==",
+   "3D=3Dn?void 0:n.summary})}):\"\"]})},se=3Dn(167),ce=3Dn(164),ie=3Dn(55),ue=3D(n(99),n(152)),le=3D7.4,de=3D1.85;=",
    "function fe(e){switch(!0){case e<=3D0:return\"#fff\";=",
    "case e>le:return\"hsl(\".concat(50,\",100%,76%)\");=",
    "default:return\"hsl(\".concat(250-e/le*200,\",100%,76%)\")}}function je(e){return N(e-=3Dde),e<0?0:e}function me(e){return N(e+=3Dde),e>le?le:e}var be=3Dfunction(e){var t=3De.hour,n=3De.setHour,a=3DObject=",
@@ -4767,9 +4767,9 @@ export const files: EncodedFiles = {
    "),{},{onIssueKeyUpdated:function(e,t,n,r,a){return function(){var o=3DObject(d.a)(l.a.mark((function o(s,c){var i;=",
    "return l.a.wrap((function(o){for(;=",
    ";=",
-   ")switch(o.prev=3Do.next){case 0:e&&clearTimeout(e),void 0!=3D=3Da.key&&((null=3D=3D=3D(i=3Da.key)||void 0=3D=3D=3Di?void 0:i.trim().match(/[A-Za-z]+-[0-9]+/))?(s(H.setIssueValue({y:r,issue:Object(k.a)=",
-   "(Object(k.a)({},n),{},{key:a.key||\"\",fields:{summary:\"\"}})})),t(setTimeout((function(){return R(a,c,s,r)}),1e3))):s(H.setIssueValue({y:r,issue:Object(k.a)(Object(k.a)({},n),{},{key:a.key||\"\",fields:{s=",
-   "ummary:\"\"}})}))),void 0!=3D=3Da.comment&&s(H.setIssueValue({y:r,issue:Object(k.a)(Object(k.a)({},n),{},{workLogComment:a.comment})}));=",
+   ")switch(o.prev=3Do.next){case 0:e&&clearTimeout(e),void 0!=3D=3Da.key&&((null=3D=3D=3D(i=3Da.key)||void 0=3D=3D=3Di?void 0:i.trim().match(/[A-Za-z0-9]+-[0-9]+/))?(s(H.setIssueValue({y:r,issue:Object(k=",
+   ".a)(Object(k.a)({},n),{},{key:a.key||\"\",fields:{summary:\"\"}})})),t(setTimeout((function(){return R(a,c,s,r)}),1e3))):s(H.setIssueValue({y:r,issue:Object(k.a)(Object(k.a)({},n),{},{key:a.key||\"\",fields=",
+   ":{summary:\"\"}})}))),void 0!=3D=3Da.comment&&s(H.setIssueValue({y:r,issue:Object(k.a)(Object(k.a)({},n),{},{workLogComment:a.comment})}));=",
    "case 3:case\"end\":return o.stop()}}),o)})));=",
    "return function(e,t){return o.apply(this,arguments)}}()}}))((function(e){var t=3De.data,n=3De.config,a=3De.worksLogged,o=3De.addRow,s=3De.addColumn,c=3De.removeColumn,i=3De.removeRow,u=3De.setDateValu=",
    "e,l=3De.setHourValue,d=3De.onIssueKeyUpdated;=",
@@ -4799,7 +4799,7 @@ export const files: EncodedFiles = {
    "return l.a.wrap((function(e){for(;=",
    ";=",
    ")switch(e.prev=3De.next){case 0:return t(H.setLogThisWorkInProgress({newLogThisWorkInProgress:!0})),e.prev=3D1,r=3Dn().data.issues.map((function(e,t){return{issue:e,y:t}})).filter((function(e){return =",
-   "e.issue.key.match(/^[A-Za-z]+-[0-9]+$/)})).flatMap((function(e){var t=3De.issue,r=3De.y;=",
+   "e.issue.key.match(/^[A-Za-z0-9]+-[0-9]+$/)})).flatMap((function(e){var t=3De.issue,r=3De.y;=",
    "return n().data.dates.map((function(e,a){return{issue:t,date:e,hours:n().data.hours[a][r]}}))})).filter((function(e){return e.hours>0})).map((function(e){var t=3De.issue,n=3De.date,r=3De.hours;=",
    "return{key:t.key,comment:t.workLogComment||\"\",date:n.toISOString().substr(0,10),hours:r}})),e.next=3D5,fetch(\"http://localhost:8000/createWorkLogs\",{method:\"POST\",mode:\"no-cors\",body:JSON.stringify({c=",
    "onfig:n().config,toLog:r})});=",

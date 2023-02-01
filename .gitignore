@@ -8,5 +8,7 @@
 /.idea/httpRequests/
 /.idea/google-java-format.xml
 /.idea/checkstyle-idea.xml
+/.idea/active-tab-highlighter.xml
+/.idea/jpa-buddy.xml
 /frontend/.idea/checkstyle-idea.xml
 /frontend/.idea/google-java-format.xml

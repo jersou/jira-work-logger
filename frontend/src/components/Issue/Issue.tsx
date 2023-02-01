@@ -20,7 +20,7 @@ export const Issue: React.FC<IssueProps> = ({issue, onDelete, onKeyChange, onCom
         <Delete fontSize={"large"}/>
       </IconButton>
       <TextField className="issue" value={issue.key}
-                 style={{maxWidth: 100, backgroundColor: issue.key.match(/^[A-Za-z]+-[0-9]+$/) ? '#edf4ff' : '#ffdbd0'}}
+                 style={{maxWidth: 100, backgroundColor: issue.key.match(/^[A-Za-z0-9]+-[0-9]+$/) ? '#edf4ff' : '#ffdbd0'}}
                  onChange={e => onKeyChange(e.target.value)}/>
       <TextField className="comment" value={issue.workLogComment}
                  placeholder='Work log comment'

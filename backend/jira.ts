@@ -20,9 +20,9 @@ export async function jiraApi(config: ConfigData, query: string, options?: jiraA
       const resp = await fetch(`${config.jiraUrl.replace(/\/$/, "")}/login.jsp`, {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: `os_username=${encodeURI(config.username)}&os_password=${encodeURI(
+        body: `os_username=${encodeURI(config.username).replaceAll("&", "%26")}&os_password=${encodeURI(
           config.password
-        )}&os_destination=&user_role=&atl_token=&login=Log+In`,
+        ).replaceAll("&", "%26")}&os_destination=&user_role=&atl_token=&login=Log+In`,
         redirect: "manual",
       });
       if (resp.headers.get("x-seraph-loginreason") !== "OK") {
@@ -30,7 +30,7 @@ export async function jiraApi(config: ConfigData, query: string, options?: jiraA
       }
       headers.append("cookie", resp.headers.get("set-cookie") || "");
     } else {
-  headers.append("Authorization", "Basic " + btoa(`${config.username}:${config.password}`));
+      headers.append("Authorization", "Basic " + btoa(`${config.username}:${config.password}`));
     }
   }
   if (options?.body) {

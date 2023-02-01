@@ -7,7 +7,7 @@ export const createWorkLogsThunk = (): AppThunk => async (dispatch: Dispatch, ge
   try {
     const toLog: ToLogElement[] = getState().data.issues
       .map((issue, y) => ({issue, y}))
-      .filter(({issue}) => issue.key.match(/^[A-Za-z]+-[0-9]+$/))
+      .filter(({issue}) => issue.key.match(/^[A-Za-z0-9]+-[0-9]+$/))
       .flatMap(({issue, y}) => getState().data.dates.map((date, x) => ({
         issue,
         date,
