@@ -1,7 +1,12 @@
 #!/usr/bin/env -S deno run --unstable --allow-read --allow-write
 
-import { assertEquals, walk, dirname, fromFileUrl } from "../deps.ts";
-import { decodeQuotedPrintable, encodeQuotedPrintable } from "./quotedPrintable.ts";
+import { walk } from "@std/fs";
+import { assertEquals } from "@std/assert";
+import { dirname, fromFileUrl } from "@std/path";
+import {
+  decodeQuotedPrintable,
+  encodeQuotedPrintable,
+} from "./quotedPrintable.ts";
 import { decodeFileContentB64, encodeFileContentB64 } from "./base64.ts";
 
 export type EncodedFile = { content: string[]; encoding: "base64" | "quoted" };
@@ -15,7 +20,9 @@ export function encodeFileContent(content: Uint8Array): EncodedFile {
     : { encoding: "quoted", content: quotedPrintable };
 }
 
-export async function decodeFileContent(fileEncoded: EncodedFile): Promise<Uint8Array> {
+export async function decodeFileContent(
+  fileEncoded: EncodedFile,
+): Promise<Uint8Array> {
   return fileEncoded.encoding === "base64"
     ? decodeFileContentB64(fileEncoded.content.join("\n"))
     : await decodeQuotedPrintable(fileEncoded.content.join("\n"));
@@ -41,22 +48,23 @@ function replacer(key: string, value: any) {
   return value == null || value.constructor != Object
     ? value
     : Object.keys(value)
-        .sort()
-        .reduce((obj: { [key: string]: any }, key) => {
-          obj[key] = value[key];
-          return obj;
-        }, {});
+      .sort()
+      .reduce((obj: { [key: string]: any }, key) => {
+        obj[key] = value[key];
+        return obj;
+      }, {});
 }
 
 export async function genFilesContent() {
-  const cwd = dirname(dirname(fromFileUrl(import.meta.url))) + "/frontend/build";
+  const cwd = dirname(dirname(fromFileUrl(import.meta.url))) +
+    "/frontend/build";
   const files = await encodeFolder(cwd);
   await Deno.writeTextFile(
     "filesContent.ts",
     `import { EncodedFiles } from "./filesContentGenerator.ts";\n` +
       "export const files: EncodedFiles = " +
       JSON.stringify(files, replacer, " ") +
-      "\n"
+      "\n",
   );
 }
 

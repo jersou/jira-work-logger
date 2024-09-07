@@ -27,12 +27,17 @@ export interface OpnOptions {
  * @param opnOptions
  */
 export async function opn(target: string, opts?: OpnOptions) {
-  const optsWithDefault: OpnOptions = Object.assign({ wait: true, app: [] }, opts);
+  const optsWithDefault: OpnOptions = Object.assign(
+    { wait: true, app: [] },
+    opts,
+  );
   let cmd: string;
   let args = [];
   const wait = optsWithDefault.wait;
   const appArgs = optsWithDefault.app?.slice(1) || [];
-  const openApp: string | undefined = optsWithDefault.app ? optsWithDefault.app[0] : undefined;
+  const openApp: string | undefined = optsWithDefault.app
+    ? optsWithDefault.app[0]
+    : undefined;
 
   if (build.os === "darwin") {
     cmd = "open";

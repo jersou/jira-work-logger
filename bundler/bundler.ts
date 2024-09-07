@@ -1,6 +1,7 @@
 #!/usr/bin/env -S deno run --unstable --allow-read --allow-write --allow-run --allow-net
 
-import { dirname, fromFileUrl, assert } from "../deps.ts";
+import { dirname, fromFileUrl } from "@std/path";
+import { assert } from "@std/assert";
 import { genFilesContent } from "./filesContentGenerator.ts";
 
 export async function bundle() {
@@ -11,7 +12,7 @@ export async function bundle() {
         cmd: ["bash", "-c", "yarn install && yarn build"],
         cwd: cwd + "/../frontend",
       }).status()
-    ).success
+    ).success,
   );
   await genFilesContent();
   await Deno.mkdir(cwd + "/../dist", { recursive: true });
@@ -19,13 +20,25 @@ export async function bundle() {
   assert(
     (
       await Deno.run({
-        cmd: ["deno", "bundle", "--unstable", cwd + "/../backend/server.ts", js],
+        cmd: [
+          "deno",
+          "bundle",
+          "--unstable",
+          cwd + "/../backend/server.ts",
+          js,
+        ],
         cwd,
       }).status()
-    ).success
+    ).success,
   );
   const bundled = await Deno.readTextFile(js);
-  await Deno.writeTextFile(js, bundled.replaceAll(/file:\/\/.*?\/Jira-Work-Logger\//g, "file:///Jira-Work-Logger/"));
+  await Deno.writeTextFile(
+    js,
+    bundled.replaceAll(
+      /file:\/\/.*?\/Jira-Work-Logger\//g,
+      "file:///Jira-Work-Logger/",
+    ),
+  );
 
   // deno compile --unstable --allow-net --allow-run --target x86_64-unknown-linux-gnu --output bin/Linux/Jira-Work-Logger --lite backend/server.ts --wait-and-close
   // deno compile --unstable --allow-net --allow-run --target x86_64-pc-windows-msvc --output bin/Windows/Jira-Work-Logger.exe --lite backend/server.ts --wait-and-close

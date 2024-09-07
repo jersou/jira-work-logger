@@ -1,5 +1,5 @@
-import {AppState} from "../types";
-import {GetState} from "./slice";
+import { AppState } from "../types";
+import { GetState } from "./slice";
 
 export const localStorageKey = "jira-work-loger-data-state";
 
@@ -8,11 +8,14 @@ function saveStateToLocalStorageKey(state: AppState) {
 }
 
 function createStateToLocalStorageMiddleware() {
-  return ({getState}: { getState: GetState }) => (next: any) => (action: any) => {
+  return ({ getState }: { getState: GetState }) =>
+  (next: any) =>
+  (action: any) => {
     const newState = next(action);
     saveStateToLocalStorageKey(getState());
     return newState;
   };
 }
 
-export const stateToLocalStorageMiddleware = createStateToLocalStorageMiddleware();
+export const stateToLocalStorageMiddleware =
+  createStateToLocalStorageMiddleware();

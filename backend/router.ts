@@ -1,11 +1,16 @@
-import { lookup, Router, RouterContext } from "../deps.ts";
+// import { lookup,  } from "../deps.ts";
+import { contentType } from "@std/media-types";
+import { RouteParams, Router, RouterContext } from "@oak/oak";
 import { files } from "../bundler/filesContent.ts";
 import { decodeFileContent } from "../bundler/filesContentGenerator.ts";
 import { ConfigData, ToLogElement } from "../frontend/src/types.ts";
 import { getHamsterReport } from "./hamster.ts";
-import { myLastIssues, logElement, issueSummary } from "./jira.ts";
+import { issueSummary, logElement, myLastIssues } from "./jira.ts";
+import { extname } from "@std/path";
 
-function allowLocalhost(ctx: RouterContext<Record<string | number, string | undefined>, Record<string, any>>) {
+function allowLocalhost(
+  ctx: RouterContext<any, any, any>,
+) {
   const origin = ctx.request.headers.get("Origin");
   if (origin?.match(/http:\/\/localhost:.*/)) {
     ctx.response.headers.set("Access-Control-Allow-Origin", origin);
@@ -25,11 +30,13 @@ export async function addStaticFilesRoutes(router: Router) {
     const indexContent = await decodeFileContent(files["index.html"]);
     router.get("/", (ctx) => {
       ctx.response.body = indexContent;
-      ctx.response.type = lookup("index.html");
+      ctx.response.type = contentType(".html");
     });
   }
   Object.entries(files)
-    .map(([path, content]) => [path, lookup(path), decodeFileContent(content)])
+    .map((
+      [path, content],
+    ) => [path, contentType(extname(path)), decodeFileContent(content)])
     .map(([path, type, bodyPromise]) =>
       router.get(`/${path}`, async (ctx) => {
         ctx.response.body = await bodyPromise;
@@ -40,7 +47,7 @@ export async function addStaticFilesRoutes(router: Router) {
 
 export function addJiraRoutes(router: Router) {
   router.post("/myLastIssues", async (ctx) => {
-    const config: ConfigData = JSON.parse(await ctx.request.body().value);
+    const config: ConfigData = await ctx.request.body.json();
     ctx.response.body = await myLastIssues(config);
     ctx.response.type = "application/json";
     allowLocalhost(ctx);
@@ -51,10 +58,13 @@ export function addJiraRoutes(router: Router) {
     if (ctx.params.issueKey) {
       let issue;
       if (issuesCache[ctx.params.issueKey]) {
-        console.log(`%c[jiraIssuesCache] ${ctx.params.issueKey}`, "color:green");
+        console.log(
+          `%c[jiraIssuesCache] ${ctx.params.issueKey}`,
+          "color:green",
+        );
         issue = issuesCache[ctx.params.issueKey];
       } else {
-        const config: ConfigData = JSON.parse(await ctx.request.body().value);
+        const config: ConfigData = await ctx.request.body.json();
         issue = await issueSummary(config, ctx.params.issueKey);
         issuesCache[ctx.params.issueKey] = issue;
       }
@@ -65,7 +75,8 @@ export function addJiraRoutes(router: Router) {
   });
 
   router.post("/createWorkLogs", async (ctx) => {
-    const { config, toLog }: { config: ConfigData; toLog: ToLogElement[] } = JSON.parse(await ctx.request.body().value);
+    const { config, toLog }: { config: ConfigData; toLog: ToLogElement[] } =
+      await ctx.request.body.json();
 
     // sequence POSTs → otherwise Jira bugs on remaining and total logged (not updated)
     for (const log of toLog) {
@@ -83,12 +94,16 @@ export function addJiraRoutes(router: Router) {
 export function addHamsterRoute(router: Router) {
   router.get("/hamsterExport", async (ctx) => {
     const ignore = ctx.request.url.searchParams.get("ignore");
-    const hamsterDaysToImport = Number(ctx.request.url.searchParams.get("hamsterDaysToImport") || 5);
-    const begin = new Date(Date.now() - 1000 * 60 * 60 * 24 * hamsterDaysToImport).toISOString().substr(0, 10);
+    const hamsterDaysToImport = Number(
+      ctx.request.url.searchParams.get("hamsterDaysToImport") || 5,
+    );
+    const begin = new Date(
+      Date.now() - 1000 * 60 * 60 * 24 * hamsterDaysToImport,
+    ).toISOString().substr(0, 10);
     const end = new Date().toISOString().substr(0, 10);
     console.log(
       `%c[hamsterExport] hamsterDaysToImport=${hamsterDaysToImport} begin=${begin} end=${end}`,
-      "color:indigo"
+      "color:indigo",
     );
     ctx.response.body = await getHamsterReport(begin, end, ignore);
     ctx.response.type = "application/json";

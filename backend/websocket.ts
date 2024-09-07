@@ -1,24 +1,18 @@
-import { WebSocketClient, WebSocketServer, deferred } from "../deps.ts";
-
-// on client: new WebSocket("ws://127.0.0.1:8001")
 export function runWebsocketServerAndWaitClose() {
-  const exitDeferred = deferred<number>();
-  const wss = new WebSocketServer(8001);
+  const exitDeferred = Promise.withResolvers<void>();
+  const server = Deno.serve({ port: 8001 }, (req) => {
+    if (req.headers.get("upgrade") != "websocket") {
+      return new Response(null, { status: 501 });
+    }
+    const { socket, response } = Deno.upgradeWebSocket(req);
 
-  wss.on("connection", (ws: WebSocketClient) => {
-    console.log("[WebSocketServer] connection");
-    ws.on("close", () => {
+    socket.addEventListener("close", async () => {
       exitDeferred.resolve();
-      wss.close();
       console.log("[WebSocketServer] close");
+      await server.shutdown();
+      console.log("[WebSocketServer] shutdown");
     });
+    return response;
   });
-  return exitDeferred;
-}
-
-if (import.meta.main) {
-  runWebsocketServerAndWaitClose().then(() => {
-    console.log("exit");
-    Deno.exit(0);
-  });
+  return exitDeferred.promise;
 }

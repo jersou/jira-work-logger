@@ -1,6 +1,10 @@
 #!/usr/bin/env -S deno run --allow-run
 
-export async function getHamsterReport(begin: string, end: string, ignore?: string | null) {
+export async function getHamsterReport(
+  begin: string,
+  end: string,
+  ignore?: string | null,
+) {
   if ((await Deno.permissions.query({ name: "run" })).state !== "granted") {
     throw new Error(`Missing Deno run permission"`);
   }
@@ -17,7 +21,9 @@ export async function getHamsterReport(begin: string, end: string, ignore?: stri
       const [comment, date, , minutes, category] = line.split("\t");
       return { comment: `${comment}@${category}`, date, minutes };
     })
-    .filter(({ comment, date, minutes }) => !ignore || !comment || !comment.match(ignore))
+    .filter(({ comment, date, minutes }) =>
+      !ignore || !comment || !comment.match(ignore)
+    )
     .map(({ comment, date, minutes }) => {
       return {
         comment,
