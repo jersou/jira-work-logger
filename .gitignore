@@ -12,3 +12,5 @@
 /.idea/jpa-buddy.xml
 /frontend/.idea/checkstyle-idea.xml
 /frontend/.idea/google-java-format.xml
+/frontend/dist/
+/frontend/tsconfig.tsbuildinfo

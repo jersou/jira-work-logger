@@ -11,7 +11,7 @@ The whole application is encapsulated in a single file, and could simply run
 with :
 
 ```
-deno run --unstable --allow-net --allow-run https://raw.githubusercontent.com/jersou/jira-work-logger/main/dist/server.js --wait-and-close
+deno -A https://raw.githubusercontent.com/jersou/jira-work-logger/main/main.ts
 ```
 
 Then, go to [http://localhost:8000/](http://localhost:8000/) with a web browser
@@ -24,21 +24,20 @@ The `--allow-run` parameter can be skipped if you don't use
 [Hamster](https://github.com/projecthamster/hamster) and if you don't want the
 application to open in the default browser on startup.
 
-If the script parameter `--wait-and-close` is present, the server will wait a
+If the script parameter `--dont-wait-and-close` is not present, the server will wait a
 frontend connection, and it will stop by itself as soon as the frontend is
 closed (a websocket check this).
 
 ## Install (by Deno)
 
 ```
-deno install --name jira-work-logger  --unstable --allow-net --allow-run https://raw.githubusercontent.com/jersou/jira-work-logger/main/dist/server.js --wait-and-close
+deno install --name jira-work-logger  --unstable --allow-net --allow-run https://raw.githubusercontent.com/jersou/jira-work-logger/main/main.js
 ```
 
 Then, simply run `jira-work-logger`
 
 ## Permissions
 
-- `--unstable` : permission check
 - `--allow-net` : to serve HTTP, send request to Jira server, and run Websocket
   (if --wait-and-close). You can adjust this permission:
   `--allow-net=127.0.0.1:8000,0.0.0.0:8001,my.own.domain.jira`
@@ -52,7 +51,7 @@ Then, simply run `jira-work-logger`
 Once run one time, the app is cached by Deno, to update the app :
 
 ```
-deno cache --reload --unstable https://raw.githubusercontent.com/jersou/jira-work-logger/main/dist/server.js
+deno cache --reload https://raw.githubusercontent.com/jersou/jira-work-logger/main/main.ts
 ```
 
 or add the `--reload` parameter to the run command
@@ -85,19 +84,15 @@ or add the `--reload` parameter to the run command
 ```
 git clone https://github.com/jersou/jira-work-logger.git
 cd jira-work-logger/frontend
-#nvm use v14.17.0
 npm install
 npm run build
 cd ../bundler/
 deno run --unstable --allow-read --allow-write filesContentGenerator.ts
-cd ..
-deno bundle --unstable backend/server.ts dist/server.js
-deno run --unstable --allow-net --allow-run dist/server.js
 ```
 
 # Make the binary file
 
 ```
-deno compile --unstable --allow-net --allow-run --target x86_64-unknown-linux-gnu --output bin/Linux/Jira-Work-Logger       backend/server.ts --wait-and-close
-deno compile --unstable --allow-net --allow-run --target x86_64-pc-windows-msvc   --output bin/Windows/Jira-Work-Logger.exe backend/server.ts --wait-and-close
+deno compile -A --target x86_64-unknown-linux-gnu --output bin/Linux/Jira-Work-Logger       main.ts --wait-and-close
+deno compile -A --target x86_64-pc-windows-msvc   --output bin/Windows/Jira-Work-Logger.exe main.ts --wait-and-close
 ```

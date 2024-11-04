@@ -1,14 +1,15 @@
 // import { lookup,  } from "../deps.ts";
 import { contentType } from "@std/media-types";
-import { RouteParams, Router, RouterContext } from "@oak/oak";
+import { Router, type RouterContext } from "@oak/oak";
 import { files } from "../bundler/filesContent.ts";
 import { decodeFileContent } from "../bundler/filesContentGenerator.ts";
-import { ConfigData, ToLogElement } from "../frontend/src/types.ts";
+import type { ConfigData, ToLogElement } from "../frontend/src/types.ts";
 import { getHamsterReport } from "./hamster.ts";
 import { issueSummary, logElement, myLastIssues } from "./jira.ts";
 import { extname } from "@std/path";
 
 function allowLocalhost(
+  // deno-lint-ignore no-explicit-any
   ctx: RouterContext<any, any, any>,
 ) {
   const origin = ctx.request.headers.get("Origin");

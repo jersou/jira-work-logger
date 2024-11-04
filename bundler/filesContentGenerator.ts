@@ -42,11 +42,13 @@ async function encodeFolder(folderPath: string): Promise<EncodedFiles> {
   return files;
 }
 
-function replacer(key: string, value: any) {
+// deno-lint-ignore no-explicit-any
+function replacer(_key: string, value: any) {
   return value == null || value.constructor != Object
     ? value
     : Object.keys(value)
       .sort()
+      // deno-lint-ignore no-explicit-any
       .reduce((obj: { [key: string]: any }, key) => {
         obj[key] = value[key];
         return obj;
@@ -55,7 +57,7 @@ function replacer(key: string, value: any) {
 
 export async function genFilesContent() {
   const cwd = dirname(dirname(fromFileUrl(import.meta.url))) +
-    "/frontend/build";
+    "/frontend/dist";
   const files = await encodeFolder(cwd);
   await Deno.writeTextFile(
     "filesContent.ts",

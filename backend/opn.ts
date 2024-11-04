@@ -1,6 +1,7 @@
 // forked from https://raw.githubusercontent.com/hashrock/deno-opn/v1.1.1/opn.ts to add permission check (checkDenoPermission)
 
-const { run, build } = Deno;
+const { build } = Deno;
+import $ from "@david/dax";
 
 //WSL is not supported
 //because "platform" in WSL returns just `{ arch: "x64", os: "linux" }`
@@ -24,7 +25,7 @@ export interface OpnOptions {
 /**
  * Returns a promise for the child process.
  * @param target The thing you want to open. Can be a URL, file, or executable.
- * @param opnOptions
+ * @param opts
  */
 export async function opn(target: string, opts?: OpnOptions) {
   const optsWithDefault: OpnOptions = Object.assign(
@@ -82,21 +83,5 @@ export async function opn(target: string, opts?: OpnOptions) {
       throw new Error(`Missing Deno run permission"`);
     }
   }
-  const process = run({
-    cmd: [cmd, ...args],
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  if (wait) {
-    return new Promise(async (resolve, reject) => {
-      let status = await process.status();
-
-      if (status.success) {
-        resolve(process);
-      } else {
-        reject(new Error("Exited with code " + status.code));
-      }
-    });
-  }
-  return Promise.resolve(process);
+  return await $`${[cmd, ...args]}`;
 }

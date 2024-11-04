@@ -1,4 +1,4 @@
-import { ConfigData, ToLogElement } from "../frontend/src/types.ts";
+import type { ConfigData, ToLogElement } from "../frontend/src/types.ts";
 
 // FIXME
 const useCookies = true;

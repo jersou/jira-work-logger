@@ -1,5 +1,14 @@
 {
+  "name": "@jersou/jira-work-logger",
+  "version": "1.0.0",
+  "license": "MIT",
+  "exports": "./main.ts",
   "tasks": {
+    "run": "deno run -A main.ts",
+    "check": "deno check main.ts",
+    "lint": "deno lint --ignore=frontend,bundler/filesContent.ts",
+    "pre-commit": "deno task fmt --check && deno task lint && deno task check",
+    "publish-dry-run": "deno publish --dry-run",
     "dev": "deno run --watch main.ts",
     "fmt": "deno fmt --ignore=bundler/filesContent.ts bundler backend && cd frontend && npm run prettier"
   },
