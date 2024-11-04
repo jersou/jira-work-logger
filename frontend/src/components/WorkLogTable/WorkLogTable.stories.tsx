@@ -21,11 +21,7 @@ const Template: Story<WorkLogTableProps> = (args) => <WorkLogTable {...args} />;
 export const workLogTable = Template.bind({});
 workLogTable.args = {
   data: {
-    dates: [
-      new Date(2020, 5, 25),
-      new Date(2020, 5, 26),
-      new Date(2020, 5, 27),
-    ],
+    dates: [new Date(2020, 5, 25), new Date(2020, 5, 26), new Date(2020, 5, 27)],
     issues: [{ key: "AAA-123" }, { key: "BBB-456" }],
     hours: [
       [1, 2],

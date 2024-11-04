@@ -22,11 +22,8 @@ export function IssueConnected() {
       issue={issue}
       jiraUrl="https://jiraUrl/"
       onKeyChange={(key) => setIssue({ ...issue, key })}
-      onCommentChange={(workLogComment) =>
-        setIssue(
-          { ...issue, workLogComment },
-        )}
-      onDelete={() => (console.log("onDelete"))}
+      onCommentChange={(workLogComment) => setIssue({ ...issue, workLogComment })}
+      onDelete={() => console.log("onDelete")}
     />
   );
 }

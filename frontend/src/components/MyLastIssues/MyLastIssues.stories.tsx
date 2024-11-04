@@ -16,11 +16,7 @@ const Template: Story<MyLastIssuesProps> = (args) => <MyLastIssues {...args} />;
 export const myLastIssues = Template.bind({});
 myLastIssues.args = {
   data: {
-    dates: [
-      new Date(2020, 5, 25),
-      new Date(2020, 5, 26),
-      new Date(2020, 5, 27),
-    ],
+    dates: [new Date(2020, 5, 25), new Date(2020, 5, 26), new Date(2020, 5, 27)],
     issues: [{ key: "AAA-123" }, { key: "BBB-456" }],
     hours: [
       [1, 2],

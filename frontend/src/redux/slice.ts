@@ -1,16 +1,7 @@
-import {
-  configureStore,
-  createSlice,
-  Draft,
-  PayloadAction,
-  ThunkDispatch,
-} from "@reduxjs/toolkit";
-import thunk, { ThunkAction } from "redux-thunk";
-import produce from "immer";
-import {
-  localStorageKey,
-  stateToLocalStorageMiddleware,
-} from "./StateToLocalStorageMiddleware";
+import { configureStore, createSlice, Draft, PayloadAction, ThunkDispatch, Tuple } from "@reduxjs/toolkit";
+import { thunk, ThunkAction } from "redux-thunk";
+import { produce } from "immer";
+import { localStorageKey, stateToLocalStorageMiddleware } from "./StateToLocalStorageMiddleware";
 import { importHamsterReportToState } from "./importHamsterReportThunk";
 import {
   AppState,
@@ -24,26 +15,15 @@ import {
 
 function addColumn(data: WorkLogTableData, date?: Date): WorkLogTableData {
   return produce(data, (newData) => {
-    const lastDate = data.dates.length > 0
-      ? data.dates[data.dates.length - 1]
-      : null;
-    newData.dates.push(
-      date
-        ? date
-        : lastDate
-        ? new Date(lastDate.getTime() + 24 * 60 * 60 * 1000)
-        : new Date(),
-    );
+    const lastDate = data.dates.length > 0 ? data.dates[data.dates.length - 1] : null;
+    newData.dates.push(date ? date : lastDate ? new Date(lastDate.getTime() + 24 * 60 * 60 * 1000) : new Date());
     newData.hours.push(newData.issues.map(() => 0));
   });
 }
 
 function initWithLast5days(data: WorkLogTableData): WorkLogTableData {
   return produce(data, (newData) => {
-    newData = addColumn(
-      newData,
-      new Date(new Date().getTime() - 4 * 24 * 60 * 60 * 1000),
-    );
+    newData = addColumn(newData, new Date(new Date().getTime() - 4 * 24 * 60 * 60 * 1000));
     for (let i = 0; i < 4; i++) {
       newData = addColumn(newData);
     }
@@ -51,10 +31,7 @@ function initWithLast5days(data: WorkLogTableData): WorkLogTableData {
   });
 }
 
-function addRow(
-  data: WorkLogTableData,
-  issue: IssueType = { key: "" },
-): WorkLogTableData {
+function addRow(data: WorkLogTableData, issue: IssueType = { key: "" }): WorkLogTableData {
   return produce(data, (newData) => {
     newData.issues.push({
       ...issue,
@@ -98,16 +75,10 @@ const slice = createSlice({
     addLast5Days(state: Draft<AppState>) {
       state.data = initWithLast5days(state.data);
     },
-    setConfig(
-      state: Draft<AppState>,
-      { payload: { config } }: PayloadAction<{ config: ConfigData }>,
-    ) {
+    setConfig(state: Draft<AppState>, { payload: { config } }: PayloadAction<{ config: ConfigData }>) {
       state.config = config;
     },
-    issueClicked(
-      state: Draft<AppState>,
-      { payload: { issue } }: PayloadAction<{ issue: IssueType }>,
-    ) {
+    issueClicked(state: Draft<AppState>, { payload: { issue } }: PayloadAction<{ issue: IssueType }>) {
       state.data = addRow(state.data, {
         key: issue.key,
         fields: { summary: issue.fields?.summary },
@@ -119,71 +90,44 @@ const slice = createSlice({
     addColumn(state: Draft<AppState>) {
       state.data = addColumn(state.data);
     },
-    setData(
-      state: Draft<AppState>,
-      { payload: { data } }: PayloadAction<{ data: WorkLogTableData }>,
-    ) {
+    setData(state: Draft<AppState>, { payload: { data } }: PayloadAction<{ data: WorkLogTableData }>) {
       state.data = data;
     },
-    setIssueValue(
-      state: Draft<AppState>,
-      { payload: { y, issue } }: PayloadAction<{ y: number; issue: IssueType }>,
-    ) {
+    setIssueValue(state: Draft<AppState>, { payload: { y, issue } }: PayloadAction<{ y: number; issue: IssueType }>) {
       state.data.issues[y] = {
         ...issue,
-        workLogComment: issue.workLogComment !== undefined
-          ? issue.workLogComment
-          : state.data.issues[y].workLogComment,
+        workLogComment: issue.workLogComment !== undefined ? issue.workLogComment : state.data.issues[y].workLogComment,
         reactKey: state.data.issues[y].reactKey || Math.random(),
       };
     },
-    removeColumn(
-      state: Draft<AppState>,
-      { payload: { num } }: PayloadAction<{ num: number }>,
-    ) {
+    removeColumn(state: Draft<AppState>, { payload: { num } }: PayloadAction<{ num: number }>) {
       state.data.dates.splice(num, 1);
       state.data.hours.splice(num, 1);
     },
-    removeRow(
-      state: Draft<AppState>,
-      { payload: { num } }: PayloadAction<{ num: number }>,
-    ) {
+    removeRow(state: Draft<AppState>, { payload: { num } }: PayloadAction<{ num: number }>) {
       state.data.issues.splice(num, 1);
       state.data.hours.map((col) => col.splice(num, 1));
     },
-    setDateValue(
-      state: Draft<AppState>,
-      { payload: { num, date } }: PayloadAction<{ num: number; date: Date }>,
-    ) {
+    setDateValue(state: Draft<AppState>, { payload: { num, date } }: PayloadAction<{ num: number; date: Date }>) {
       state.data.dates[num] = date;
     },
-    setHourValue(state: Draft<AppState>, {
-      payload: {
-        x,
-        y,
-        hour,
-      },
-    }: PayloadAction<{ x: number; y: number; hour: number }>) {
+    setHourValue(
+      state: Draft<AppState>,
+      { payload: { x, y, hour } }: PayloadAction<{ x: number; y: number; hour: number }>
+    ) {
       state.data.hours[x][y] = hour;
     },
-    setWorksLogged(
-      state: Draft<AppState>,
-      { payload: { worksLogged } }: PayloadAction<{ worksLogged: WorksLogged }>,
-    ) {
+    setWorksLogged(state: Draft<AppState>, { payload: { worksLogged } }: PayloadAction<{ worksLogged: WorksLogged }>) {
       state.worksLogged = worksLogged;
     },
     importHamsterReport(
       state: Draft<AppState>,
-      { payload: { hamsterReport } }: PayloadAction<
-        { hamsterReport: HamsterReportElement[] }
-      >,
+      { payload: { hamsterReport } }: PayloadAction<{ hamsterReport: HamsterReportElement[] }>
     ) {
       importHamsterReportToState(hamsterReport, state);
     },
     resetHours(state: Draft<AppState>) {
-      state.data.hours.forEach((col, x) =>
-        col.forEach((cell, y) => (col[y] = 0))
-      );
+      state.data.hours.forEach((col, x) => col.forEach((cell, y) => (col[y] = 0)));
     },
     resetConfig() {
       localStorage.clear();
@@ -191,9 +135,7 @@ const slice = createSlice({
     },
     websocketStatusChange(
       state: Draft<AppState>,
-      { payload: { websocketState } }: PayloadAction<
-        { websocketState: WebsocketState }
-      >,
+      { payload: { websocketState } }: PayloadAction<{ websocketState: WebsocketState }>
     ) {
       if (websocketState === "OPEN" || state.websocketState !== "ERROR") {
         state.websocketState = websocketState;
@@ -201,9 +143,7 @@ const slice = createSlice({
     },
     setLogThisWorkInProgress(
       state: Draft<AppState>,
-      { payload: { newLogThisWorkInProgress } }: PayloadAction<
-        { newLogThisWorkInProgress: boolean }
-      >,
+      { payload: { newLogThisWorkInProgress } }: PayloadAction<{ newLogThisWorkInProgress: boolean }>
     ) {
       state.logThisWorkInProgress = newLogThisWorkInProgress;
     },
@@ -217,5 +157,5 @@ export type GetState = () => AppState;
 export const actions = slice.actions;
 export const store = configureStore({
   reducer: slice.reducer,
-  middleware: [thunk, stateToLocalStorageMiddleware],
+  middleware: () => new Tuple(thunk, stateToLocalStorageMiddleware),
 });

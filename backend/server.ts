@@ -5,6 +5,10 @@ import { getRouter } from "./router.ts";
 import { runWebsocketServerAndWaitClose } from "./websocket.ts";
 import $ from "@david/dax";
 
+// import {cliteRun} from "jsr:@jersou/clite@0.7.4";
+// import $ from "jsr:@david/dax@0.42.0";
+
+
 const httpPort = 8000;
 const controller = new AbortController();
 

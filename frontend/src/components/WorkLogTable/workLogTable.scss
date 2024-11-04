@@ -1,4 +1,5 @@
-td, th {
+td,
+th {
   border-left: solid 1px #dddddd;
 }
 
@@ -29,17 +30,29 @@ tr.even {
 tr {
   transition: background-color 0.6s;
 
-  td, th {
-    transition: max-height 0.6s, line-height 0.6s, padding 0.6s, border 0.6s, background-color 0.6s;
+  td,
+  th {
+    transition:
+      max-height 0.6s,
+      line-height 0.6s,
+      padding 0.6s,
+      border 0.6s,
+      background-color 0.6s;
 
     div {
-      transition: max-height 0.6s, line-height 0.6s, padding 0.6s, border 0.6s, background-color 0.6s;
+      transition:
+        max-height 0.6s,
+        line-height 0.6s,
+        padding 0.6s,
+        border 0.6s,
+        background-color 0.6s;
     }
   }
 }
 
 .issue-el-exit-active {
-  td, th {
+  td,
+  th {
     border: 0 !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
@@ -59,7 +72,8 @@ tr {
 }
 
 .issue-el-enter {
-  td, th {
+  td,
+  th {
     line-height: 0;
     overflow: hidden;
 
@@ -71,7 +85,8 @@ tr {
 }
 
 .issue-el-enter.issue-el-enter-active {
-  td, th {
+  td,
+  th {
     line-height: 1.43;
 
     div {
@@ -79,7 +94,6 @@ tr {
     }
   }
 }
-
 
 .add-button {
   position: relative;

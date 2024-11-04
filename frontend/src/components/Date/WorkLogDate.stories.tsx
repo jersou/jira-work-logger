@@ -15,10 +15,5 @@ workLogDate.args = { date: new Date(2020, 2, 13) };
 
 export function WorkLogDateConnected() {
   const [date, setDate] = useState(new Date());
-  return (
-    <WorkLogDate
-      date={date}
-      onChange={(e) => setDate(new Date(e.target.value))}
-    />
-  );
+  return <WorkLogDate date={date} onChange={(e) => setDate(new Date(e.target.value))} />;
 }

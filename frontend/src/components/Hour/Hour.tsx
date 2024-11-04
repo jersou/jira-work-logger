@@ -1,8 +1,8 @@
 import React from "react";
-import TextField from "@material-ui/core/TextField";
+import TextField from "@mui/material/TextField";
 import "./hour.scss";
-import { Add, Remove } from "@material-ui/icons";
-import { Button } from "@material-ui/core";
+import { Add, Remove } from "@mui/icons-material";
+import { Button } from "@mui/material";
 import { round2 } from "../../utils";
 
 export interface HourProps {
@@ -27,12 +27,12 @@ function getHourColor(hour: number): string {
 }
 
 function decHouc(hour: number) {
-  round2(hour = hour - step);
+  round2((hour = hour - step));
   return hour < 0 ? 0 : hour;
 }
 
 function incHour(hour: number) {
-  round2(hour = hour + step);
+  round2((hour = hour + step));
   return hour > hourMax ? hourMax : hour;
 }
 
@@ -55,8 +55,9 @@ export const Hour: React.FC<HourProps> = ({ hour, setHour, ...props }) => (
           e.deltaY > 0 ? setHour(decHouc(hour)) : setHour(incHour(hour));
           e.preventDefault();
         }}
+        variant="standard"
         onChange={(e) => setHour(Number(e.target.value))}
-        InputProps={{ inputProps: { min: 0, max: 7.4, step } }}
+        InputProps={{ disableUnderline: true, inputProps: { min: 0, max: 7.4, step } }}
         {...props}
       />
     </div>

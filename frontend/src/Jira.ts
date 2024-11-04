@@ -18,8 +18,6 @@ export function genWl(issues: IssueType[], username: string) {
       date: started.substr(0, 10),
       timeSpentSeconds,
     }))
-    .forEach((
-      { date, timeSpentSeconds },
-    ) => (wlTot[date] = timeSpentSeconds + (wlTot[date] || 0)));
+    .forEach(({ date, timeSpentSeconds }) => (wlTot[date] = timeSpentSeconds + (wlTot[date] || 0)));
   return wlTot;
 }

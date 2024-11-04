@@ -1,39 +1,19 @@
-#!/usr/bin/env -S deno run --unstable --allow-read --allow-write --allow-run --allow-net
+#!/usr/bin/env -S deno run -A
 
-import { dirname, fromFileUrl } from "@std/path";
-import { assert } from "@std/assert";
 import { genFilesContent } from "./filesContentGenerator.ts";
 
+import $ from "@david/dax";
+
 export async function bundle() {
-  const cwd = dirname(fromFileUrl(import.meta.url));
-  assert(
-    (
-      await Deno.run({
-        cmd: ["bash", "-c", "yarn install && yarn build"],
-        cwd: cwd + "/../frontend",
-      }).status()
-    ).success,
-  );
+  $.cd(import.meta);
+  await $`cd ../frontend && npm install && npm run build`;
   await genFilesContent();
-  await Deno.mkdir(cwd + "/../dist", { recursive: true });
-  const js = cwd + "/../dist/server.js";
-  assert(
-    (
-      await Deno.run({
-        cmd: [
-          "deno",
-          "bundle",
-          "--unstable",
-          cwd + "/../backend/server.ts",
-          js,
-        ],
-        cwd,
-      }).status()
-    ).success,
-  );
-  const bundled = await Deno.readTextFile(js);
-  await Deno.writeTextFile(
-    js,
+  await $`mkdir -p ../dist`;
+  const jsPath = $.path("../dist/server.jsPath")
+  await $`deno bundle ../backend/server.ts ${jsPath}`;
+
+  const bundled = await jsPath.readText();
+await  jsPath.writeText(
     bundled.replaceAll(
       /file:\/\/.*?\/Jira-Work-Logger\//g,
       "file:///Jira-Work-Logger/",

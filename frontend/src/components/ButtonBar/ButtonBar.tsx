@@ -1,6 +1,6 @@
 import { genWl, getLastIssues } from "../../Jira";
-import { Button, IconButton } from "@material-ui/core";
-import { Add, Delete, GetApp, Link, Send } from "@material-ui/icons";
+import { Button, IconButton } from "@mui/material";
+import { Add, Delete, GetApp, Link, Send } from "@mui/icons-material";
 import { StopServer } from "../StopServer/StopServer";
 import React from "react";
 import { ConfigData, WebsocketState, WorksLogged } from "../../types";
@@ -37,12 +37,7 @@ export function ButtonBar({
       <Button variant="contained" size="small" onClick={hamsterImport}>
         <GetApp /> Import from Hamster
       </Button>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={createWorkLogs}
-        disabled={logThisWorkInProgress}
-      >
+      <Button variant="contained" color="primary" onClick={createWorkLogs} disabled={logThisWorkInProgress}>
         <Send /> Log this work logs
       </Button>
       <StopServer websocketState={websocketState} />

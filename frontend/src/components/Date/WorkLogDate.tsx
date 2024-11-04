@@ -1,5 +1,5 @@
 import React, { ChangeEvent } from "react";
-import TextField from "@material-ui/core/TextField";
+import TextField from "@mui/material/TextField";
 import "./workLogDate.css";
 import { default as dayjs } from "dayjs";
 import "dayjs/locale/fr";
@@ -22,8 +22,6 @@ export const WorkLogDate: React.FC<DateProps> = ({ date, ...props }) => (
       style={{ maxWidth: 140 }}
       {...props}
     />
-    <div style={{ fontSize: 20, marginTop: 4 }}>
-      {dayjs(date).format("dddd")}
-    </div>
+    <div style={{ fontSize: 20, marginTop: 4 }}>{dayjs(date).format("dddd")}</div>
   </>
 );

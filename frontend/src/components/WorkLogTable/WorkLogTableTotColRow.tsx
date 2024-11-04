@@ -1,37 +1,33 @@
 import { WorkLogTableData, WorksLogged } from "../../types";
-import TableCell from "@material-ui/core/TableCell";
+import TableCell from "@mui/material/TableCell";
 import { round2 } from "../../utils";
 import React from "react";
-import TableRow from "@material-ui/core/TableRow";
-import { Button } from "@material-ui/core";
-import { Add } from "@material-ui/icons";
+import TableRow from "@mui/material/TableRow";
+import { Button } from "@mui/material";
+import { Add } from "@mui/icons-material";
 
 export function totColumn(data: WorkLogTableData, num: number): number {
   return round2(data.hours[num].reduce((tot, curr) => tot + curr, 0));
 }
 
 function getWorklogged(worksLogged: WorksLogged, date: Date) {
-  const found = worksLogged
-    ? Object.entries(worksLogged).find(([k, v]) =>
-      k === date.toISOString().substr(0, 10)
-    )
-    : 0;
+  const found = worksLogged ? Object.entries(worksLogged).find(([k, v]) => k === date.toISOString().substr(0, 10)) : 0;
   return found ? round2(found[1] / 3600) : 0;
 }
 
 export function tot(data: WorkLogTableData): number {
-  return round2(
-    data.hours
-      .map((col) => col.reduce((tot, curr) => tot + curr, 0))
-      .reduce((tot, curr) => tot + curr, 0),
-  );
+  return round2(data.hours.map((col) => col.reduce((tot, curr) => tot + curr, 0)).reduce((tot, curr) => tot + curr, 0));
 }
 
 export function TotColRow({
   addRow,
   data,
   worksLogged,
-}: { addRow: () => void; data: WorkLogTableData; worksLogged: WorksLogged }) {
+}: {
+  addRow: () => void;
+  data: WorkLogTableData;
+  worksLogged: WorksLogged;
+}) {
   return (
     <TableRow className="total-row">
       <TableCell align="center" className="add-button">
@@ -40,15 +36,9 @@ export function TotColRow({
         </Button>
       </TableCell>
       {data.dates.map((date, x) => (
-        <TotDateCell
-          {...{ x, date, worksLogged, data }}
-          key={x + date.toISOString()}
-        />
+        <TotDateCell {...{ x, date, worksLogged, data }} key={x + date.toISOString()} />
       ))}
-      <TableCell
-        style={{ fontSize: 20, textAlign: "center", minWidth: 100 }}
-        className="total"
-      >
+      <TableCell style={{ fontSize: 20, textAlign: "center", minWidth: 100 }} className="total">
         {tot(data)}
       </TableCell>
     </TableRow>
@@ -72,9 +62,7 @@ function TotDateCell({
         Already Logged {">"}= {getWorklogged(worksLogged, date)}
       </div>
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <TotDate
-          total={round2(totColumn(data, x) + getWorklogged(worksLogged, date))}
-        />
+        <TotDate total={round2(totColumn(data, x) + getWorklogged(worksLogged, date))} />
       </div>
     </TableCell>
   );
@@ -100,11 +88,5 @@ function TotDate({ total }: { total: number }) {
       backgroundColor = "#ffc594";
       break;
   }
-  return (
-    <div
-      style={{ backgroundColor, fontSize: 20, borderRadius: 20, width: 100 }}
-    >
-      {total}
-    </div>
-  );
+  return <div style={{ backgroundColor, fontSize: 20, borderRadius: 20, width: 100 }}>{total}</div>;
 }

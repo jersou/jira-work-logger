@@ -27,6 +27,7 @@ export type ConfigData = {
   token: string;
   hamsterIgnoreComment: string;
   hamsterDaysToImport: number;
+  hoursByDay: number;
 };
 export type WorksLogged = { [key: string]: number };
 export type WebsocketState = "OPEN" | "CLOSE" | "ERROR" | "UNDEFINED";
