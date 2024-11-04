@@ -9,11 +9,11 @@ export async function bundle() {
   await $`cd ../frontend && npm install && npm run build`;
   await genFilesContent();
   await $`mkdir -p ../dist`;
-  const jsPath = $.path("../dist/server.jsPath")
+  const jsPath = $.path("../dist/server.jsPath");
   await $`deno bundle ../backend/server.ts ${jsPath}`;
 
   const bundled = await jsPath.readText();
-await  jsPath.writeText(
+  await jsPath.writeText(
     bundled.replaceAll(
       /file:\/\/.*?\/Jira-Work-Logger\//g,
       "file:///Jira-Work-Logger/",

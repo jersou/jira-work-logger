@@ -1,6 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts"
+    "dev": "deno run --watch main.ts",
+    "fmt": "deno fmt --ignore=bundler/filesContent.ts bundler backend && cd frontend && npm run prettier"
   },
   "imports": {
     "@david/dax": "jsr:@david/dax@^0.41.0",

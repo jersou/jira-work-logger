@@ -31,6 +31,7 @@ myLastIssues.args = {
     token: "token",
     hamsterIgnoreComment: "",
     hamsterDaysToImport: 2,
+    hoursByDay: 8,
   },
   issueClicked: () => console.log("issueClicked"),
   setWorksLogged: () => console.log("setWorksLogged"),

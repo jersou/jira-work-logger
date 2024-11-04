@@ -32,9 +32,7 @@ async function encodeFolder(folderPath: string): Promise<EncodedFiles> {
   const files: EncodedFiles = {};
   for await (const entry of walk(folderPath)) {
     if (entry.isFile) {
-      const file = await Deno.open(entry.path, { read: true });
-      const content = await Deno.readAll(file);
-      Deno.close(file.rid);
+      const content = await Deno.readFile(entry.path);
       const path = entry.path.replace(folderPath + "/", "");
       console.log(path);
       files[path] = encodeFileContent(content);

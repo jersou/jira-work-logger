@@ -19,5 +19,6 @@ config.args = {
     token: "token",
     hamsterIgnoreComment: "none",
     hamsterDaysToImport: 5,
+    hoursByDay: 8,
   },
 };
