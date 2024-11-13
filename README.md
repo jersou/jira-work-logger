@@ -6,8 +6,7 @@ A web app to easily add Jira worklogs.
 
 First, you need deno : https://deno.land/#installation
 
-The whole application is encapsulated in a single file, and could simply run
-with :
+And the app could simply be run with :
 
 ```shell
 deno -A jsr:@jersou/jira-work-logger
@@ -31,30 +30,12 @@ closed (a websocket check this).
 ## Install (by Deno)
 
 ```
-deno install --name jira-work-logger  --unstable --allow-net --allow-run https://raw.githubusercontent.com/jersou/jira-work-logger/main/main.js
+deno install --name jira-work-logger -A jsr:@jersou/jira-work-logger
 ```
 
 Then, simply run `jira-work-logger`
 
-## Permissions
-
-- `--allow-net` : to serve HTTP, send request to Jira server, and run Websocket
-  (if --wait-and-close). You can adjust this permission:
-  `--allow-net=127.0.0.1:8000,0.0.0.0:8001,my.own.domain.jira`
-- `--allow-run` (optional) : to open the frontend in the default web browser and
-  call [Hamster](https://github.com/projecthamster/hamster) on "Import from
-  Hamster" button click, this feature use
-  [Deno-Opn](https://github.com/hashrock/deno-opn)
-
-## To update the WebApp :
-
-Once run one time, the app is cached by Deno, to update the app :
-
-```
-deno cache --reload https://raw.githubusercontent.com/jersou/jira-work-logger/main/main.ts
-```
-
-or add the `--reload` parameter to the run command
+## CLI usage
 
 ```shell
 $ deno -A ./jira-work-logger.ts --help              
@@ -109,7 +90,7 @@ deno run -A ./jira-work-logger.ts updateAssetsBundle
 ./bundle.ts
 ```
 
-# Make the binary file
+# Make the binary files
 
 ```
 deno compile -A --target x86_64-unknown-linux-gnu --output bin/Linux/Jira-Work-Logger       jira-work-logger.ts
