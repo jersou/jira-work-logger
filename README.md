@@ -1,7 +1,6 @@
 # Jira-Work-Logger
 
-A web app to easily add Jira worklogs (and to make a standalone
-[Deno](https://deno.land/)/[React](https://www.reactjs.org/) WebApp POC).
+A web app to easily add Jira worklogs.
 
 ## To run the WebApp :
 
@@ -10,12 +9,13 @@ First, you need deno : https://deno.land/#installation
 The whole application is encapsulated in a single file, and could simply run
 with :
 
-```
-deno -A https://raw.githubusercontent.com/jersou/jira-work-logger/main/main.ts
+```shell
+deno -A jsr:@jersou/jira-work-logger
+# or deno -A https://raw.githubusercontent.com/jersou/jira-work-logger/main/jira-work-logger.ts
+# or deno -A https://raw.githubusercontent.com/jersou/jira-work-logger/main/dist/jira-work-logger.bundle.esm.js
 ```
 
-Then, go to [http://localhost:8000/](http://localhost:8000/) with a web browser
-(this page open at app start-up if you use the `--allow-run` parameter).
+Then, go to [http://localhost:8000/](http://localhost:8000/) with a web browser.
 
 Then, set the configuration in the bottom part to get Jira Issues and add
 worklogs.
@@ -24,7 +24,7 @@ The `--allow-run` parameter can be skipped if you don't use
 [Hamster](https://github.com/projecthamster/hamster) and if you don't want the
 application to open in the default browser on startup.
 
-If the script parameter `--dont-wait-and-close` is not present, the server will wait a
+If the script parameter `--not-exit-if-no-client` is not present, the server will wait a
 frontend connection, and it will stop by itself as soon as the frontend is
 closed (a websocket check this).
 
@@ -56,6 +56,22 @@ deno cache --reload https://raw.githubusercontent.com/jersou/jira-work-logger/ma
 
 or add the `--reload` parameter to the run command
 
+```shell
+$ deno -A ./jira-work-logger.ts --help              
+Usage: ./jira-work-logger.ts [Options] [--] [command [command args]]
+
+Command:
+  main [default]
+
+Options:
+ -h, --help                     Show this help                                                        [default: false]
+     --hostname                 Server hostname                                                 [default: "localhost"]
+     --port                     Server port                                                            [default: 8000]
+     --open-in-browser          Open with chromium/chrome/gio if true or with the parameter [default: "google-chrome"]
+     --open-in-browser-app-mode Add --app= to browser command if openInBrowser is used                 [default: true]
+     --not-exit-if-no-client    Keep the server alive after the last client disconnects               [default: false]
+```
+
 ## Screenshot
 
 ![screenshot](screenshot.png)
@@ -63,10 +79,12 @@ or add the `--reload` parameter to the run command
 ## Dependencies
 
 - [Deno](https://deno.land/)
-  - [Oak](https://oakserver.github.io/oak/)
-  - [Deno-Opn](https://github.com/hashrock/deno-opn)
+  - [std](https://jsr.io/@std)
+  - [@david/dax](https://jsr.io/@david/dax)
+  - [@jersou/clite](https://jsr.io/@jersou/clite)
+  - [@jersou/desktop-web-app](https://jsr.io/@jersou/desktop-web-app)
 - [React](https://www.reactjs.org/)
-  - [Create React App](https://reactjs.org/docs/create-a-new-react-app.html)
+  - ViteJS
   - [Material UI](https://material-ui.com/)
   - [React Transition Group](https://github.com/reactjs/react-transition-group)
 - [Redux](https://redux.js.org/)
@@ -86,13 +104,14 @@ git clone https://github.com/jersou/jira-work-logger.git
 cd jira-work-logger/frontend
 npm install
 npm run build
-cd ../bundler/
-deno run --unstable --allow-read --allow-write filesContentGenerator.ts
+cd ..
+deno run -A ./jira-work-logger.ts updateAssetsBundle
+./bundle.ts
 ```
 
 # Make the binary file
 
 ```
-deno compile -A --target x86_64-unknown-linux-gnu --output bin/Linux/Jira-Work-Logger       main.ts --wait-and-close
-deno compile -A --target x86_64-pc-windows-msvc   --output bin/Windows/Jira-Work-Logger.exe main.ts --wait-and-close
+deno compile -A --target x86_64-unknown-linux-gnu --output bin/Linux/Jira-Work-Logger       jira-work-logger.ts
+deno compile -A --target x86_64-pc-windows-msvc   --output bin/Windows/Jira-Work-Logger.exe jira-work-logger.ts
 ```
