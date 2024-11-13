@@ -6,11 +6,12 @@
   "tasks": {
     "run": "deno run -A main.ts",
     "check": "deno check main.ts",
+    "update-assets-bundle": "deno run -A ./jira-work-logger.ts updateAssetsBundle",
     "dev": "deno run -A --watch='*.ts,frontend/dist' --watch-exclude=assets_bundle.json ./jira-work-logger.ts --update --notExitIfNoClient=true",
-    "lint": "deno lint --ignore=frontend,bundler/filesContent.ts",
+    "lint": "deno lint --ignore=frontend",
     "pre-commit": "deno task fmt --check && deno task lint && deno task check",
     "publish-dry-run": "deno publish --dry-run",
-    "fmt": "deno fmt --ignore=bundler/filesContent.ts backend *.ts && cd frontend && npm run prettier"
+    "fmt": "deno fmt --ignore=assets_bundle.json backend *.ts && cd frontend && npm run prettier"
   },
   "imports": {
     "@david/dax": "jsr:@david/dax@^0.41.0",
