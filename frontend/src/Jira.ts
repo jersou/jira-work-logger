@@ -1,7 +1,7 @@
 import { ConfigData, IssueType, WorksLogged } from "./types";
 
 export async function getLastIssues(config: ConfigData) {
-  return await fetch("http://localhost:8000/myLastIssues", {
+  return await fetch("/api/myLastIssues", {
     method: "POST",
     body: JSON.stringify(config),
   })

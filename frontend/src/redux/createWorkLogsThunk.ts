@@ -22,7 +22,7 @@ export const createWorkLogsThunk = (): AppThunk => async (dispatch: Dispatch, ge
         date: date.toISOString().substr(0, 10),
         hours: hours,
       }));
-    await fetch("http://localhost:8000/createWorkLogs", {
+    await fetch("/api/createWorkLogs", {
       method: "POST",
       mode: "no-cors",
       body: JSON.stringify({ config: getState().config, toLog }),

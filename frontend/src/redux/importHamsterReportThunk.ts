@@ -6,7 +6,7 @@ import { getIssueSummaryFromJira } from "./onIssueKeyUpdatedThunk";
 
 export const importHamsterReportThunk = (): AppThunk => async (dispatch: Dispatch, getState: GetState) => {
   const resp = await fetch(
-    `http://localhost:8000/hamsterExport?hamsterDaysToImport=${getState().config.hamsterDaysToImport}&ignore=${getState().config.hamsterIgnoreComment}`
+    `/api/hamsterExport?hamsterDaysToImport=${getState().config.hamsterDaysToImport}&ignore=${getState().config.hamsterIgnoreComment}`
   );
   const hamsterReport: HamsterReportElement[] = await resp.json();
   await dispatch(actions.importHamsterReport({ hamsterReport }));

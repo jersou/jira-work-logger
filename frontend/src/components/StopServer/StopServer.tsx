@@ -5,7 +5,7 @@ import { WebsocketState } from "../../types";
 import Tooltip from "@mui/material/Tooltip";
 
 async function close() {
-  await fetch("http://localhost:8000/stop", {
+  await fetch("/api/stop", {
     method: "POST",
     mode: "no-cors",
   });

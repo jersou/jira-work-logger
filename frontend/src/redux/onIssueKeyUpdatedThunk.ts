@@ -12,7 +12,7 @@ export async function getIssueSummaryFromJira(
   const key = newData.key?.trim() || "";
   const issueFromJira = issuesCache[key]
     ? issuesCache[key]
-    : await fetch(`http://localhost:8000/issue/${key}`, {
+    : await fetch(`/api/issue/${key}`, {
         method: "POST",
         body: JSON.stringify(getState().config),
       })

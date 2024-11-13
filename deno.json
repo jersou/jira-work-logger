@@ -1,20 +1,21 @@
 {
   "name": "@jersou/jira-work-logger",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "license": "MIT",
-  "exports": "./main.ts",
+  "exports": "./jira-work-logger.ts",
   "tasks": {
     "run": "deno run -A main.ts",
     "check": "deno check main.ts",
+    "dev": "deno run -A --watch='*.ts,frontend/dist' --watch-exclude=assets_bundle.json ./jira-work-logger.ts --update --notExitIfNoClient=true",
     "lint": "deno lint --ignore=frontend,bundler/filesContent.ts",
     "pre-commit": "deno task fmt --check && deno task lint && deno task check",
     "publish-dry-run": "deno publish --dry-run",
-    "dev": "deno run --watch main.ts",
-    "fmt": "deno fmt --ignore=bundler/filesContent.ts bundler backend && cd frontend && npm run prettier"
+    "fmt": "deno fmt --ignore=bundler/filesContent.ts backend *.ts && cd frontend && npm run prettier"
   },
   "imports": {
     "@david/dax": "jsr:@david/dax@^0.41.0",
-    "@jersou/clite": "jsr:@jersou/clite@^0.7.4",
+    "@jersou/clite": "jsr:@jersou/clite@^0.7.6",
+    "@jersou/desktop-web-app": "jsr:@jersou/desktop-web-app@0.0.2",
     "@oak/oak": "jsr:@oak/oak@^17.0.0",
     "@std/assert": "jsr:@std/assert@^1.0.4",
     "@std/async": "jsr:@std/async@^1.0.5",
@@ -22,6 +23,7 @@
     "@std/fs": "jsr:@std/fs@^1.0.3",
     "@std/io": "jsr:@std/io@^0.224.7",
     "@std/media-types": "jsr:@std/media-types@^1.0.3",
-    "@std/path": "jsr:@std/path@^1.0.4"
+    "@std/path": "jsr:@std/path@^1.0.4",
+    "@std/streams": "jsr:@std/streams@1.0.8"
   }
 }
